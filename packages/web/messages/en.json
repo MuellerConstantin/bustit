@@ -43,8 +43,15 @@
       }
     },
     "navbar": {
-      "home": "Home",
-      "logout": "Sign out"
+      "home": "Home"
+    },
+    "userMenu": {
+      "label": "User menu",
+      "logout": "Sign out",
+      "roles": {
+        "admin": "Admin",
+        "player": "Player"
+      }
     },
     "footer": {
       "copyright": "© 2026 bustit"

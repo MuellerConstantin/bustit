@@ -1,7 +1,10 @@
 import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
+import { Avatar } from '@/components/atoms/Avatar';
 import { Link } from '@/components/atoms/Link';
-import { LogoutButton } from '@/components/molecules/LogoutButton';
+import { UserMenu } from '@/components/organisms/UserMenu';
+import { auth } from '@/lib/server/auth';
 
 export async function Navbar() {
   const t = await getTranslations('components.navbar');
@@ -19,8 +22,21 @@ export async function Navbar() {
             className="size-10"
           />
         </Link>
-        <LogoutButton />
+        {/* The session is read per request, so the rest of the navbar can be prerendered. */}
+        <Suspense fallback={<Avatar className="m-0.5" />}>
+          <CurrentUserMenu />
+        </Suspense>
       </nav>
     </header>
   );
+}
+
+async function CurrentUserMenu() {
+  const session = await auth();
+
+  if (!session) {
+    return null;
+  }
+
+  return <UserMenu username={session.user.username} role={session.user.role} />;
 }

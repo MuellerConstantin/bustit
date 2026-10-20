@@ -43,8 +43,15 @@
       }
     },
     "navbar": {
-      "home": "Startseite",
-      "logout": "Abmelden"
+      "home": "Startseite"
+    },
+    "userMenu": {
+      "label": "Benutzermenü",
+      "logout": "Abmelden",
+      "roles": {
+        "admin": "Admin",
+        "player": "Spieler"
+      }
     },
     "footer": {
       "copyright": "© 2026 bustit"
