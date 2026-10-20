@@ -27,10 +27,24 @@
       "toLogin": "Sign in"
     },
     "boc": {
-      "seo": {
-        "title": "Administration"
+      "users": {
+        "seo": {
+          "title": "Users"
+        },
+        "title": "Users"
       },
-      "title": "Administration"
+      "invites": {
+        "seo": {
+          "title": "Invites"
+        },
+        "title": "Invites"
+      },
+      "rooms": {
+        "seo": {
+          "title": "Rooms"
+        },
+        "title": "Rooms"
+      }
     },
     "forbidden": {
       "title": "No entry",
@@ -83,6 +97,21 @@
     },
     "footer": {
       "copyright": "© 2026 bustit"
+    },
+    "bocTemplate": {
+      "title": "Administration"
+    },
+    "bocNavigation": {
+      "label": "Administration",
+      "sections": {
+        "accounts": "Accounts",
+        "gameplay": "Gameplay"
+      },
+      "entries": {
+        "users": "Users",
+        "invites": "Invites",
+        "rooms": "Rooms"
+      }
     }
   },
   "validation": {

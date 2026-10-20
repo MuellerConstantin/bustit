@@ -1,11 +1,14 @@
 import { forbidden } from 'next/navigation';
 import { Suspense } from 'react';
+import { BocTemplate } from '@/components/templates/BocTemplate';
 import { auth } from '@/lib/server/auth';
 
 export default function BocLayout({ children }: LayoutProps<'/[locale]/boc'>) {
   return (
     <Suspense>
-      <AdminOnly>{children}</AdminOnly>
+      <AdminOnly>
+        <BocTemplate>{children}</BocTemplate>
+      </AdminOnly>
     </Suspense>
   );
 }

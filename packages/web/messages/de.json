@@ -27,10 +27,24 @@
       "toLogin": "Anmelden"
     },
     "boc": {
-      "seo": {
-        "title": "Verwaltung"
+      "users": {
+        "seo": {
+          "title": "Benutzer"
+        },
+        "title": "Benutzer"
       },
-      "title": "Verwaltung"
+      "invites": {
+        "seo": {
+          "title": "Einladungen"
+        },
+        "title": "Einladungen"
+      },
+      "rooms": {
+        "seo": {
+          "title": "Räume"
+        },
+        "title": "Räume"
+      }
     },
     "forbidden": {
       "title": "Kein Zutritt",
@@ -83,6 +97,21 @@
     },
     "footer": {
       "copyright": "© 2026 bustit"
+    },
+    "bocTemplate": {
+      "title": "Verwaltung"
+    },
+    "bocNavigation": {
+      "label": "Verwaltung",
+      "sections": {
+        "accounts": "Konten",
+        "gameplay": "Spielbetrieb"
+      },
+      "entries": {
+        "users": "Benutzer",
+        "invites": "Einladungen",
+        "rooms": "Räume"
+      }
     }
   },
   "validation": {

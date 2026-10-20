@@ -1,13 +1,6 @@
-import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
-import { MainTemplate } from '@/components/templates/MainTemplate';
-
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('pages.boc.seo');
-
-  return { title: t('title') };
-}
+import { redirect } from '@/i18n/navigation';
+import { currentLocale } from '@/i18n/locale';
 
 export default async function BocPage() {
-  return <MainTemplate></MainTemplate>;
+  redirect({ href: '/boc/users', locale: await currentLocale() });
 }
