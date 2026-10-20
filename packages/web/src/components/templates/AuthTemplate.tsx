@@ -20,7 +20,7 @@ export function AuthTemplate({ backgroundSrc, children }: AuthTemplateProps) {
        * the free area, while it still fills the space under the translucent
        * panel. Both widths have to match.
        */}
-      <div className="absolute inset-0 xl:-right-[30rem]">
+      <div className="absolute inset-0 xl:-right-120">
         <Image
           src={backgroundSrc}
           alt=""

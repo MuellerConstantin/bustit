@@ -36,6 +36,14 @@
       "title": "No entry",
       "description": "You're not getting in here. Not today, not with that pass.",
       "toHome": "Back to the start page"
+    },
+    "notFound": {
+      "seo": {
+        "title": "Not found"
+      },
+      "title": "Wrong door",
+      "description": "There's nothing behind this door. Maybe you took a wrong turn.",
+      "toHome": "Back to the start page"
     }
   },
   "components": {

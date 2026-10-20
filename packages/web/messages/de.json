@@ -36,6 +36,14 @@
       "title": "Kein Zutritt",
       "description": "Hier kommst du nicht rein. Nicht heute, nicht mit diesem Ausweis.",
       "toHome": "Zurück zur Startseite"
+    },
+    "notFound": {
+      "seo": {
+        "title": "Nicht gefunden"
+      },
+      "title": "Falsche Tür",
+      "description": "Hinter dieser Tür ist nichts. Vielleicht hast du dich verlaufen.",
+      "toHome": "Zurück zur Startseite"
     }
   },
   "components": {
