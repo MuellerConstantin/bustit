@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Schemas, DTOs and socket event types shared between server and web.",
   "private": true,
+  "license": "AGPL-3.0-only",
   "type": "module",
   "exports": {
     ".": {

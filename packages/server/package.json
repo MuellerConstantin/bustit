@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Authoritative game server for bustit.",
   "private": true,
+  "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
     "build": "nest build",

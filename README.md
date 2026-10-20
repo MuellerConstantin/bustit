@@ -20,6 +20,8 @@
 - [Development](#development)
   - [Database](#database)
   - [Checks](#checks)
+- [License](#license)
+  - [Forbidden](#forbidden)
 
 ## Introduction
 
@@ -118,3 +120,15 @@ npm run test
 npm run test:e2e
 npm run format
 ```
+
+## License
+
+Copyright (c) 2026 Constantin Müller and contributors
+
+[GNU AFFERO GENERAL PUBLIC LICENSE](https://www.gnu.org/licenses/) or [LICENSE](./LICENSE.md) for
+more details.
+
+### Forbidden
+
+**Hold Liable**: Software is provided without warranty and the software
+author/license owner cannot be held liable for damages.
