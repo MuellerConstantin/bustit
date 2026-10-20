@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import localFont from 'next/font/local';
 import { currentLocale } from '@/i18n/locale';
 import { routing } from '@/i18n/routing';
@@ -27,20 +28,25 @@ const bebasNeue = localFont({
 });
 
 /*
- * The pages don't reveal what they belong to: no name in the title, no
+ * Pages set only their own title; the template appends the name. There is no
  * description, and search engines are asked to stay away.
  */
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-  icons: {
-    icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
-    ],
-    shortcut: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('seo');
+
+  return {
+    title: { default: t('title'), template: `%s | ${t('title')}` },
+    robots: { index: false, follow: false },
+    icons: {
+      icon: [
+        { url: '/favicon.svg', type: 'image/svg+xml' },
+        { url: '/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+      ],
+      shortcut: '/favicon.ico',
+      apple: '/apple-touch-icon.png',
+    },
+  };
+}
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));

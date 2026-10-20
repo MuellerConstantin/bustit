@@ -294,9 +294,11 @@ folders themselves for that.
 - **React Aria navigates through Next.js**: A `RouterProvider` in the root
   layout makes React Aria links use next-intl's router and puts the locale
   into their `href`, so links are written without it, e.g. `/login`.
+- **Page titles name the page, then the app**: Pages set only their own
+  title; the root layout's title template appends `| BustIt`.
 - **Discreet entry pages**: Login and registration don't reveal what they
-  belong to: no name, no page description, texts that say nothing about the
-  purpose, and `noindex` for search engines. The texts speak like a bouncer
+  are for: beyond the name in the title, no page description, texts that say
+  nothing about the purpose, and `noindex` for search engines. The texts speak like a bouncer
   at a back door, in keeping with the scenes behind the forms.
 
 ## Coding Principles

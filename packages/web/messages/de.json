@@ -1,5 +1,13 @@
 {
+  "seo": {
+    "title": "BustIt"
+  },
   "pages": {
+    "home": {
+      "seo": {
+        "title": "Startseite"
+      }
+    },
     "login": {
       "seo": {
         "title": "Anmelden"
