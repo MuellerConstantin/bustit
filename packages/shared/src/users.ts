@@ -9,3 +9,11 @@ export const userProfileSchema = z.object({
 });
 
 export type UserProfile = z.infer<typeof userProfileSchema>;
+
+/** Another user as far as a list needs them, e.g. who created an invite. */
+export const userReferenceSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+});
+
+export type UserReference = z.infer<typeof userReferenceSchema>;

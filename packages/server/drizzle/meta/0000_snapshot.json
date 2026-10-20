@@ -1,5 +1,5 @@
 {
-  "id": "dc3da6df-6dab-450f-aa69-d9ca474f3b51",
+  "id": "1de02f0c-99c9-4e01-b049-08ebe4eaec26",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -17,6 +17,12 @@
         },
         "code_hash": {
           "name": "code_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -100,6 +106,10 @@
       },
       "policies": {},
       "checkConstraints": {
+        "invites_title_length": {
+          "name": "invites_title_length",
+          "value": "char_length(\"invites\".\"title\") between 1 and 100"
+        },
         "invites_used_at_and_by_together": {
           "name": "invites_used_at_and_by_together",
           "value": "(\"invites\".\"used_at\" is null) = (\"invites\".\"used_by\" is null)"

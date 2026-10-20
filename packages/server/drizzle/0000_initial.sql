@@ -3,6 +3,7 @@ CREATE TYPE "public"."user_role" AS ENUM('admin', 'player');--> statement-breakp
 CREATE TABLE "invites" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"code_hash" text NOT NULL,
+	"title" text NOT NULL,
 	"created_by" uuid NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"expires_at" timestamp with time zone NOT NULL,
@@ -10,6 +11,7 @@ CREATE TABLE "invites" (
 	"used_by" uuid,
 	"revoked_at" timestamp with time zone,
 	CONSTRAINT "invites_code_hash_unique" UNIQUE("code_hash"),
+	CONSTRAINT "invites_title_length" CHECK (char_length("invites"."title") between 1 and 100),
 	CONSTRAINT "invites_used_at_and_by_together" CHECK (("invites"."used_at" is null) = ("invites"."used_by" is null)),
 	CONSTRAINT "invites_not_used_and_revoked" CHECK ("invites"."used_at" is null or "invites"."revoked_at" is null)
 );

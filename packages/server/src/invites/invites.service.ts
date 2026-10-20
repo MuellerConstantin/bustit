@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectDrizzle } from '@nestjs/drizzle';
 import { and, desc, eq, getTableColumns, gt, isNull, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import type { Env } from '../infrastructure/config/index.js';
 import type {
   Database,
@@ -14,6 +15,7 @@ import {
   InviteNotFoundError,
   InviteUsedError,
 } from './invites.errors.js';
+import { users } from '../users/index.js';
 import { type Invite, invites } from './invites.schema.js';
 
 export type CreatedInvite = {
@@ -22,7 +24,12 @@ export type CreatedInvite = {
   readonly code: string;
 };
 
-export type InviteWithStatus = Invite & { readonly status: InviteStatus };
+/** An invite as it is listed, with its status and the users' names. */
+export type ListedInvite = Invite & {
+  readonly status: InviteStatus;
+  readonly createdByUsername: string;
+  readonly usedByUsername: string | null;
+};
 
 /*
  * Derived in the database, so "expired" is judged by the same clock as in
@@ -48,12 +55,14 @@ export class InvitesService {
     });
   }
 
-  async create(createdBy: string): Promise<CreatedInvite> {
+  /** @param title A title validated with `inviteTitleSchema`. */
+  async create(createdBy: string, title: string): Promise<CreatedInvite> {
     const code = generateInviteCode();
     const [invite] = await this.db
       .insert(invites)
       .values({
         codeHash: hashInviteCode(code),
+        title,
         createdBy,
         expiresAt: sql`now() + make_interval(days => ${this.validityDays})`,
       })
@@ -63,10 +72,20 @@ export class InvitesService {
   }
 
   /** All invites, newest first. */
-  list(): Promise<InviteWithStatus[]> {
+  list(): Promise<ListedInvite[]> {
+    const creator = alias(users, 'creator');
+    const invitee = alias(users, 'invitee');
+
     return this.db
-      .select({ ...getTableColumns(invites), status })
+      .select({
+        ...getTableColumns(invites),
+        status,
+        createdByUsername: creator.username,
+        usedByUsername: invitee.username,
+      })
       .from(invites)
+      .innerJoin(creator, eq(invites.createdBy, creator.id))
+      .leftJoin(invitee, eq(invites.usedBy, invitee.id))
       .orderBy(desc(invites.createdAt), desc(invites.id));
   }
 

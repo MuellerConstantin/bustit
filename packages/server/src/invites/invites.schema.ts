@@ -1,3 +1,4 @@
+import { INVITE_TITLE_MAX_LENGTH } from '@bustit/shared';
 import { sql } from 'drizzle-orm';
 import { check, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { users } from '../users/index.js';
@@ -11,6 +12,7 @@ export const invites = pgTable(
       .default(sql`uuidv7()`),
     /** SHA-256 of the normalized code; the code itself is never stored. */
     codeHash: text().notNull().unique('invites_code_hash_unique'),
+    title: text().notNull(),
     createdBy: uuid()
       .notNull()
       .references(() => users.id),
@@ -21,6 +23,10 @@ export const invites = pgTable(
     revokedAt: timestamp({ withTimezone: true }),
   },
   (table) => [
+    check(
+      'invites_title_length',
+      sql`char_length(${table.title}) between 1 and ${sql.raw(String(INVITE_TITLE_MAX_LENGTH))}`,
+    ),
     check(
       'invites_used_at_and_by_together',
       sql`(${table.usedAt} is null) = (${table.usedBy} is null)`,

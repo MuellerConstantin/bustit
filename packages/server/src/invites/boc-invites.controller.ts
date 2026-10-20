@@ -1,4 +1,5 @@
 import {
+  Body,
   ConflictException,
   Controller,
   Get,
@@ -8,9 +9,11 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
-import type {
-  CreatedInvite as CreatedInviteResponse,
-  Invite as InviteResponse,
+import {
+  type CreateInviteRequest,
+  type CreatedInvite as CreatedInviteResponse,
+  type Invite as InviteResponse,
+  createInviteRequestSchema,
 } from '@bustit/shared';
 import { z } from 'zod';
 // Imported from the files rather than the auth module's index, which imports
@@ -35,15 +38,20 @@ export class BocInvitesController {
   @Post()
   async create(
     @CurrentUser() user: AuthenticatedUser,
+    @Body(new ZodValidationPipe(createInviteRequestSchema))
+    body: CreateInviteRequest,
   ): Promise<CreatedInviteResponse> {
-    const { invite, code } = await this.invitesService.create(user.id);
-    return toCreatedInviteResponse(invite, code);
+    const { invite, code } = await this.invitesService.create(
+      user.id,
+      body.title,
+    );
+    return toCreatedInviteResponse(invite, code, user);
   }
 
   @Get()
   async list(): Promise<InviteResponse[]> {
     const invites = await this.invitesService.list();
-    return invites.map((invite) => toInviteResponse(invite, invite.status));
+    return invites.map(toInviteResponse);
   }
 
   /** Revoking keeps the invite listed, so this isn't a DELETE. */

@@ -55,8 +55,13 @@ export async function authorizationFor(
   return `Bearer ${token}`;
 }
 
+export const TEST_INVITE_TITLE = 'Test invite';
+
 /** An open invite created by the admin, with its plain code. */
-export async function createInvite(app: TestApp): Promise<CreatedInvite> {
+export async function createInvite(
+  app: TestApp,
+  title = TEST_INVITE_TITLE,
+): Promise<CreatedInvite> {
   const admin = await getAdmin(app);
-  return app.get(InvitesService).create(admin.id);
+  return app.get(InvitesService).create(admin.id, title);
 }

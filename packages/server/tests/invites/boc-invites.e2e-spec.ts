@@ -3,6 +3,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { RegistrationService } from '../../src/auth/index.js';
 import {
+  TEST_INVITE_TITLE,
   TEST_PASSWORD,
   authorizationFor,
   createPlayer,
@@ -14,6 +15,7 @@ import { type TestApp, createTestApp } from '../utils/test-app.js';
 describe('/api/boc/invites (e2e)', () => {
   let app: TestApp;
   let adminId: string;
+  let adminUsername: string;
   let asAdmin: string;
 
   beforeAll(async () => {
@@ -21,6 +23,7 @@ describe('/api/boc/invites (e2e)', () => {
 
     const admin = await getAdmin(app);
     adminId = admin.id;
+    adminUsername = admin.username;
     asAdmin = await authorizationFor(app, admin);
   });
 
@@ -28,10 +31,14 @@ describe('/api/boc/invites (e2e)', () => {
     await app.close();
   });
 
-  function createInvite(authorization = asAdmin) {
+  function createInvite(
+    authorization = asAdmin,
+    body: object = { title: TEST_INVITE_TITLE },
+  ) {
     return request(app.http)
       .post('/api/boc/invites')
-      .set('Authorization', authorization);
+      .set('Authorization', authorization)
+      .send(body);
   }
 
   function listInvites() {
@@ -78,13 +85,27 @@ describe('/api/boc/invites (e2e)', () => {
 
       expect(code).toMatch(/^BJ-[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}$/);
       expect(invite).toMatchObject({
+        title: TEST_INVITE_TITLE,
         status: 'open',
-        createdBy: adminId,
+        createdBy: { id: adminId, username: adminUsername },
         usedAt: null,
         usedBy: null,
         revokedAt: null,
       });
     });
+
+    it('trims the title', async () => {
+      const response = await createInvite(asAdmin, { title: '  Max  ' });
+
+      expect(createdInviteSchema.parse(response.body).invite.title).toBe('Max');
+    });
+
+    it.each([{}, { title: '   ' }, { title: 'a'.repeat(101) }])(
+      'rejects the body %j',
+      async (body) => {
+        await createInvite(asAdmin, body).expect(400);
+      },
+    );
 
     it('creates an invite a new user can register with', async () => {
       const { code } = createdInviteSchema.parse(
@@ -119,6 +140,29 @@ describe('/api/boc/invites (e2e)', () => {
       expect(JSON.stringify(response.body)).not.toContain(first.code);
       expect(JSON.stringify(response.body)).not.toMatch(/codeHash|code_hash/);
       expect(() => inviteSchema.array().parse(response.body)).not.toThrow();
+    });
+
+    it('names the user who used an invite', async () => {
+      const { invite, code } = createdInviteSchema.parse(
+        (await createInvite().expect(201)).body,
+      );
+      const username = uniqueUsername();
+      await app.get(RegistrationService).register({
+        inviteCode: code,
+        username,
+        password: TEST_PASSWORD,
+      });
+
+      const response = await listInvites().expect(200);
+      const listed = inviteSchema
+        .array()
+        .parse(response.body)
+        .find(({ id }) => id === invite.id);
+
+      expect(listed).toMatchObject({
+        createdBy: { id: adminId, username: adminUsername },
+        usedBy: { username },
+      });
     });
   });
 
