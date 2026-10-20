@@ -14,9 +14,11 @@ const STATUS_VARIANTS = {
 
 interface InviteListItemProps {
   invite: Invite;
+  /** What can be done with the invite, shown at the end of the row. */
+  actions?: React.ReactNode;
 }
 
-export function InviteListItem({ invite }: InviteListItemProps) {
+export function InviteListItem({ invite, actions }: InviteListItemProps) {
   const t = useTranslations('components.inviteListItem');
   const format = useFormatter();
 
@@ -67,6 +69,7 @@ export function InviteListItem({ invite }: InviteListItemProps) {
           </span>
         </span>
       </div>
+      {actions && <div className="shrink-0">{actions}</div>}
     </li>
   );
 }

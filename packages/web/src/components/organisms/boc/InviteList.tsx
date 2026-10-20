@@ -6,6 +6,7 @@ import { Button } from '@/components/atoms/Button';
 import { Switch } from '@/components/atoms/Switch';
 import { InviteListItem } from '@/components/molecules/boc/InviteListItem';
 import { InviteListSkeleton } from '@/components/molecules/boc/InviteListSkeleton';
+import { RevokeInvite } from '@/components/organisms/boc/RevokeInvite';
 import { useInvites } from '@/hooks/useInvites';
 
 export function InviteList() {
@@ -34,7 +35,8 @@ export function InviteList() {
         </div>
       )}
 
-      {error && (
+      {/* A failed refresh keeps the invites loaded before; SWR retries it. */}
+      {error && !invites && (
         <div role="alert" className="flex flex-col items-start gap-3">
           <p className="text-sm text-destructive">{t('error')}</p>
           <Button variant="secondary" onPress={() => void mutate()}>
@@ -55,7 +57,13 @@ export function InviteList() {
           className="divide-y divide-border rounded-xl border border-border"
         >
           {visibleInvites.map((invite) => (
-            <InviteListItem key={invite.id} invite={invite} />
+            <InviteListItem
+              key={invite.id}
+              invite={invite}
+              actions={
+                invite.status === 'open' && <RevokeInvite invite={invite} />
+              }
+            />
           ))}
         </ul>
       )}

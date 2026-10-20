@@ -159,6 +159,19 @@
       "copy": "Code kopieren",
       "copied": "Kopiert.",
       "copyFailed": "Kopieren ging nicht. Markier den Code und kopier ihn selbst."
+    },
+    "confirmDialog": {
+      "cancel": "Abbrechen"
+    },
+    "revokeInvite": {
+      "actions": "Aktionen für „{title}“",
+      "revoke": "Widerrufen",
+      "confirmTitle": "Einladung widerrufen?",
+      "confirmText": "„{title}“ wird widerrufen. Der Code funktioniert danach nicht mehr, das lässt sich nicht rückgängig machen.",
+      "errors": {
+        "used": "Die Einladung wurde inzwischen benutzt und lässt sich nicht mehr widerrufen.",
+        "failed": "Die Einladung konnte nicht widerrufen werden. Versuch es noch mal."
+      }
     }
   },
   "validation": {

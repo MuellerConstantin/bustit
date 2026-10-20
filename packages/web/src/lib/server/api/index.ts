@@ -1,2 +1,7 @@
 export { login } from './auth';
-export { createInvite, listInvites } from './invites';
+export {
+  type RevokeOutcome,
+  createInvite,
+  listInvites,
+  revokeInvite,
+} from './invites';

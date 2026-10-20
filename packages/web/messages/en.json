@@ -159,6 +159,19 @@
       "copy": "Copy code",
       "copied": "Copied.",
       "copyFailed": "Copying didn't work. Select the code and copy it yourself."
+    },
+    "confirmDialog": {
+      "cancel": "Cancel"
+    },
+    "revokeInvite": {
+      "actions": "Actions for “{title}”",
+      "revoke": "Revoke",
+      "confirmTitle": "Revoke invite?",
+      "confirmText": "“{title}” will be revoked. Its code stops working, which can't be undone.",
+      "errors": {
+        "used": "The invite has been used in the meantime and can't be revoked anymore.",
+        "failed": "The invite couldn't be revoked. Try again."
+      }
     }
   },
   "validation": {
