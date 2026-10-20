@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { BocNavigation } from '@/components/organisms/BocNavigation';
+import { BocNavigation } from '@/components/organisms/boc/BocNavigation';
 import { MainTemplate } from '@/components/templates/MainTemplate';
 
 interface BocTemplateProps {

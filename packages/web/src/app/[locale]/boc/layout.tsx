@@ -1,6 +1,6 @@
 import { forbidden } from 'next/navigation';
 import { Suspense } from 'react';
-import { BocTemplate } from '@/components/templates/BocTemplate';
+import { BocTemplate } from '@/components/templates/boc/BocTemplate';
 import { auth } from '@/lib/server/auth';
 
 export default function BocLayout({ children }: LayoutProps<'/[locale]/boc'>) {

@@ -19,3 +19,8 @@ api.interceptors.request.use((config) => {
 
   return config;
 });
+
+/** Request options that make a call on behalf of the user the token belongs to. */
+export function bearer(accessToken: string) {
+  return { headers: { Authorization: `Bearer ${accessToken}` } };
+}

@@ -112,6 +112,30 @@
         "invites": "Invites",
         "rooms": "Rooms"
       }
+    },
+    "inviteList": {
+      "label": "Invites",
+      "onlyOpen": "Open only",
+      "loading": "Loading invites …",
+      "error": "The invites couldn't be loaded.",
+      "retry": "Try again",
+      "empty": "No invites yet.",
+      "emptyOpen": "No open invites."
+    },
+    "inviteListItem": {
+      "status": {
+        "open": "Open",
+        "used": "Used",
+        "revoked": "Revoked",
+        "expired": "Expired"
+      },
+      "statusDate": {
+        "open": "Expires on {date}",
+        "used": "Used on {date}",
+        "revoked": "Revoked on {date}",
+        "expired": "Expired on {date}"
+      },
+      "createdAt": "Created on {date}"
     }
   },
   "validation": {

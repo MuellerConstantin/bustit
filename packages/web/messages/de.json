@@ -112,6 +112,30 @@
         "invites": "Einladungen",
         "rooms": "Räume"
       }
+    },
+    "inviteList": {
+      "label": "Einladungen",
+      "onlyOpen": "Nur offene",
+      "loading": "Einladungen werden geladen …",
+      "error": "Die Einladungen konnten nicht geladen werden.",
+      "retry": "Erneut versuchen",
+      "empty": "Noch keine Einladungen.",
+      "emptyOpen": "Keine offenen Einladungen."
+    },
+    "inviteListItem": {
+      "status": {
+        "open": "Offen",
+        "used": "Benutzt",
+        "revoked": "Widerrufen",
+        "expired": "Abgelaufen"
+      },
+      "statusDate": {
+        "open": "Läuft ab am {date}",
+        "used": "Benutzt am {date}",
+        "revoked": "Widerrufen am {date}",
+        "expired": "Abgelaufen am {date}"
+      },
+      "createdAt": "Erstellt am {date}"
     }
   },
   "validation": {

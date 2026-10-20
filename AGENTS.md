@@ -48,12 +48,13 @@ and the checks a change has to pass. This file doesn't repeat them.
 │   │   └── tests/      # Unit and e2e tests mirroring src/, shared helpers in utils/
 │   └── web/            # @bustit/web: Next.js client, UI only
 │       ├── src/
-│       │   ├── actions/        # Server Actions, the browser's only way to the game server
+│       │   ├── actions/        # Server Actions: changes the browser asks for
 │       │   ├── app/[locale]/   # Pages, one route tree per locale
-│       │   ├── app/api/        # The web app's own endpoints, e.g. next-auth's
+│       │   ├── app/api/        # The web app's own endpoints: next-auth's and data the browser loads
 │       │   ├── components/     # Atomic Design: atoms, molecules, organisms, templates
+│       │   ├── hooks/          # React hooks, e.g. SWR hooks for the data endpoints
 │       │   ├── i18n/           # Locales, routing, typed messages, locale-aware navigation
-│       │   └── lib/            # Helpers; server/ holds server-only code
+│       │   └── lib/            # Helpers; server/ and client/ hold code for one side only
 │       └── messages/           # Translations, one JSON file per locale
 ├── tsconfig.base.json  # Shared compiler options for engine, shared and server
 └── package.json        # Workspace scripts
@@ -246,12 +247,15 @@ folders themselves for that.
 ### Web
 
 - **Browsers only talk to the web app (BFF)**: The game server's HTTP API is
-  not exposed to browsers. The web server calls it at `SERVER_URL` and offers
-  browsers only what the UI needs, as Server Actions in `src/actions/`. There
-  is no generic proxy that passes requests through: each use case gets its
-  own action, which calls one function of the server API client in
+  not exposed to browsers. The web server calls it at `SERVER_URL` with the
+  user's token from the session and offers browsers only what the UI needs:
+  changes as Server Actions in `src/actions/`, data the browser loads as GET
+  route handlers below `src/app/api/`, which it fetches with SWR. There is no
+  generic proxy that passes requests through: each use case gets its own
+  action or route, which calls one function of the server API client in
   `src/lib/server/`, so nothing reaches the game server that the web app
-  doesn't call on purpose.
+  doesn't call on purpose. A 401 from the game server ends the session and
+  sends the user to the login; a 403 is passed on.
 - **Sessions with next-auth, token stays on the server**: Login goes through
   next-auth's credentials provider, which calls the game server's login. The
   server's token is kept in next-auth's encrypted, HTTP-only session cookie
@@ -270,7 +274,9 @@ folders themselves for that.
 - **Atomic Design with React Aria**: Atoms wrap React Aria Components with
   the theme's styling; everything above is built from atoms instead of
   styling React Aria primitives directly. Component files are named in
-  PascalCase.
+  PascalCase. Components that belong to one area of the app, such as the
+  operations console, live in a subfolder of their level named after it,
+  e.g. `organisms/boc/`. Content that loads shows a skeleton of its shape.
 - **Theme via tokens**: Colors, radii and shadows are CSS variables in
   `globals.css`, exposed to Tailwind. Components use only these tokens, never
   raw palette colors.

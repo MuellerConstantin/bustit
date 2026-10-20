@@ -1,7 +1,10 @@
 import { loginRequestSchema, type UserProfile } from '@bustit/shared';
 import NextAuth from 'next-auth';
+import { getToken } from 'next-auth/jwt';
+import { headers } from 'next/headers';
 import Credentials from 'next-auth/providers/credentials';
 import { login } from '../api';
+import { serverEnv } from '../env';
 
 type Role = UserProfile['role'];
 
@@ -34,6 +37,8 @@ declare module '@auth/core/jwt' {
   }
 }
 
+const SESSION_COOKIE = 'bustit.session';
+
 /**
  * The web app's own session. The game server's token is kept in the
  * encrypted, HTTP-only session cookie and never handed to browser code:
@@ -46,7 +51,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // Keeps users away from next-auth's built-in pages.
   pages: { signIn: '/login', error: '/login' },
   cookies: {
-    sessionToken: { name: 'bustit.session' },
+    sessionToken: { name: SESSION_COOKIE },
     csrfToken: { name: 'bustit.csrf' },
     callbackUrl: { name: 'bustit.callback-url' },
   },
@@ -111,3 +116,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 });
+
+/**
+ * The game server's token from the current request's session cookie, for
+ * calls to the game server on the user's behalf. `null` without a session.
+ */
+export async function getAccessToken(): Promise<string | null> {
+  const token = await getToken({
+    req: { headers: await headers() },
+    secret: serverEnv().AUTH_SECRET,
+    cookieName: SESSION_COOKIE,
+    salt: SESSION_COOKIE,
+  });
+
+  return token?.accessToken ?? null;
+}
