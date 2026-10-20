@@ -44,14 +44,27 @@ export function InviteListItem({ invite }: InviteListItemProps) {
           {t(`status.${invite.status}`)}
         </Badge>
       </div>
-      <div className="flex min-w-0 flex-col">
-        {statusDate && (
-          <span className="text-sm">
-            {t(`statusDate.${invite.status}`, { date: formatDate(statusDate) })}
+      {/*
+       * The dates break between each other, never inside one: side by side
+       * where the row is wide enough, one below the other where it isn't.
+       */}
+      <div className="@container flex min-w-0 grow flex-col">
+        <span className="truncate text-sm font-medium">{invite.title}</span>
+        <span className="flex flex-col text-xs text-muted-foreground @lg:flex-row @lg:gap-1.5">
+          {statusDate && (
+            <span className="truncate">
+              {t(`statusDate.${invite.status}`, {
+                date: formatDate(statusDate),
+                username: invite.usedBy?.username ?? '',
+              })}
+            </span>
+          )}
+          <span aria-hidden className="hidden @lg:inline">
+            ·
           </span>
-        )}
-        <span className="text-xs text-muted-foreground">
-          {t('createdAt', { date: formatDate(invite.createdAt) })}
+          <span className="truncate">
+            {t('createdAt', { date: formatDate(invite.createdAt) })}
+          </span>
         </span>
       </div>
     </li>

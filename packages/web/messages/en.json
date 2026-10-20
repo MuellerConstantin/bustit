@@ -131,7 +131,7 @@
       },
       "statusDate": {
         "open": "Expires on {date}",
-        "used": "Used on {date}",
+        "used": "Used by {username} on {date}",
         "revoked": "Revoked on {date}",
         "expired": "Expired on {date}"
       },
@@ -139,15 +139,26 @@
     },
     "createInvite": {
       "create": "Create invite",
-      "error": "The invite couldn't be created. Try again."
+      "formTitle": "New invite",
+      "codeTitle": "Invite created",
+      "done": "Done"
     },
-    "inviteCodeDialog": {
-      "title": "Invite created",
+    "createInviteForm": {
+      "title": "Title",
+      "titleDescription": "Who is the invite for? It's how you'll recognize it in the list.",
+      "titlePlaceholder": "e.g. Max from the card club",
+      "submit": "Create",
+      "cancel": "Cancel",
+      "errors": {
+        "titleRequired": "Please enter a title.",
+        "failed": "The invite couldn't be created. Try again."
+      }
+    },
+    "inviteCode": {
       "description": "Pass this code on. It's shown only now and can't be looked up later.",
       "copy": "Copy code",
       "copied": "Copied.",
-      "copyFailed": "Copying didn't work. Select the code and copy it yourself.",
-      "done": "Done"
+      "copyFailed": "Copying didn't work. Select the code and copy it yourself."
     }
   },
   "validation": {

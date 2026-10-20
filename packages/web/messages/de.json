@@ -131,7 +131,7 @@
       },
       "statusDate": {
         "open": "Läuft ab am {date}",
-        "used": "Benutzt am {date}",
+        "used": "Benutzt von {username} am {date}",
         "revoked": "Widerrufen am {date}",
         "expired": "Abgelaufen am {date}"
       },
@@ -139,15 +139,26 @@
     },
     "createInvite": {
       "create": "Einladung erstellen",
-      "error": "Die Einladung konnte nicht erstellt werden. Versuch es noch mal."
+      "formTitle": "Neue Einladung",
+      "codeTitle": "Einladung erstellt",
+      "done": "Fertig"
     },
-    "inviteCodeDialog": {
-      "title": "Einladung erstellt",
+    "createInviteForm": {
+      "title": "Titel",
+      "titleDescription": "Für wen ist die Einladung? Daran erkennst du sie in der Liste wieder.",
+      "titlePlaceholder": "z.B. Max aus der Skatrunde",
+      "submit": "Erstellen",
+      "cancel": "Abbrechen",
+      "errors": {
+        "titleRequired": "Bitte gib einen Titel ein.",
+        "failed": "Die Einladung konnte nicht erstellt werden. Versuch es noch mal."
+      }
+    },
+    "inviteCode": {
       "description": "Gib diesen Code weiter. Er wird nur jetzt angezeigt und lässt sich später nicht mehr abrufen.",
       "copy": "Code kopieren",
       "copied": "Kopiert.",
-      "copyFailed": "Kopieren ging nicht. Markier den Code und kopier ihn selbst.",
-      "done": "Fertig"
+      "copyFailed": "Kopieren ging nicht. Markier den Code und kopier ihn selbst."
     }
   },
   "validation": {

@@ -1,6 +1,7 @@
 import 'server-only';
 
 import {
+  type CreateInviteRequest,
   type CreatedInvite,
   createdInviteSchema,
   type Invite,
@@ -19,10 +20,11 @@ export async function listInvites(accessToken: string): Promise<Invite[]> {
 /** Creates an invite. The response is the only time its code is available. */
 export async function createInvite(
   accessToken: string,
+  body: CreateInviteRequest,
 ): Promise<CreatedInvite> {
   const { data } = await api.post<unknown>(
     '/boc/invites',
-    undefined,
+    body,
     bearer(accessToken),
   );
 

@@ -31,7 +31,7 @@ export function AuthTemplate({ backgroundSrc, children }: AuthTemplateProps) {
         />
       </div>
 
-      <main className="relative z-10 flex grow items-center justify-center px-4 py-10 sm:px-6 xl:w-[30rem] xl:items-stretch xl:p-0">
+      <main className="relative z-10 flex grow items-center justify-center px-4 py-10 sm:px-6 xl:w-120 xl:items-stretch xl:p-0">
         {children}
       </main>
     </div>
