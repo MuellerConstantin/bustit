@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: monorepoRoot,
   cacheComponents: true,
   partialPrefetching: true,
+  experimental: {
+    authInterrupts: true,
+  },
   turbopack: {
     root: monorepoRoot,
     rules: {

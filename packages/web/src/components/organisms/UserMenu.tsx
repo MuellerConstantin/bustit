@@ -1,12 +1,17 @@
 'use client';
 
 import type { UserProfile } from '@bustit/shared';
-import { LogOut } from 'lucide-react';
+import { LogOut, ShieldUser } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { logoutAction } from '@/actions/auth';
 import { Avatar } from '@/components/atoms/Avatar';
 import { Button } from '@/components/atoms/Button';
-import { Menu, MenuItem, MenuTrigger } from '@/components/atoms/Menu';
+import {
+  Menu,
+  MenuItem,
+  MenuSeparator,
+  MenuTrigger,
+} from '@/components/atoms/Menu';
 import { Popover } from '@/components/atoms/Popover';
 import { useRouter } from '@/i18n/navigation';
 
@@ -44,6 +49,18 @@ export function UserMenu({ username, role }: UserMenuProps) {
           </div>
         </div>
         <Menu aria-label={t('label')}>
+          {role === 'admin' && (
+            <>
+              <MenuItem id="boc" textValue={t('boc')} href="/boc">
+                <ShieldUser
+                  className="h-4 w-4 text-muted-foreground"
+                  aria-hidden
+                />
+                {t('boc')}
+              </MenuItem>
+              <MenuSeparator />
+            </>
+          )}
           <MenuItem id="logout" textValue={t('logout')} onAction={logout}>
             <LogOut className="h-4 w-4 text-muted-foreground" aria-hidden />
             {t('logout')}

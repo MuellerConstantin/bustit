@@ -261,8 +261,12 @@ folders themselves for that.
 - **Every page requires a login unless public**: The proxy (`src/proxy.ts`)
   sends requests without a session to the login, except for the pages it
   lists as public. A new page is protected without anyone remembering to.
-  The check only reads the session cookie; the game server still checks the
-  token on every call.
+  Pages of the operations console live below `/boc`, whose layout answers
+  users who aren't admins with `forbidden()`. With Cache Components the
+  session can only be read inside `<Suspense>`, so that answer has the status
+  200 rather than 403. These checks only read the session cookie, whose role
+  is the one from login time; the game server still checks the token and the
+  role on every call.
 - **Atomic Design with React Aria**: Atoms wrap React Aria Components with
   the theme's styling; everything above is built from atoms instead of
   styling React Aria primitives directly. Component files are named in

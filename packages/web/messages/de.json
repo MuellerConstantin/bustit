@@ -25,6 +25,17 @@
       "description": "Nur mit Einladung. Keine Ausnahmen.",
       "hasAccount": "Schon dabei?",
       "toLogin": "Anmelden"
+    },
+    "boc": {
+      "seo": {
+        "title": "Verwaltung"
+      },
+      "title": "Verwaltung"
+    },
+    "forbidden": {
+      "title": "Kein Zutritt",
+      "description": "Hier kommst du nicht rein. Nicht heute, nicht mit diesem Ausweis.",
+      "toHome": "Zurück zur Startseite"
     }
   },
   "components": {
@@ -59,7 +70,8 @@
       "roles": {
         "admin": "Admin",
         "player": "Spieler"
-      }
+      },
+      "boc": "Verwaltung"
     },
     "footer": {
       "copyright": "© 2026 bustit"

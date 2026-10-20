@@ -25,6 +25,17 @@
       "description": "Invite only. No exceptions.",
       "hasAccount": "Already in?",
       "toLogin": "Sign in"
+    },
+    "boc": {
+      "seo": {
+        "title": "Administration"
+      },
+      "title": "Administration"
+    },
+    "forbidden": {
+      "title": "No entry",
+      "description": "You're not getting in here. Not today, not with that pass.",
+      "toHome": "Back to the start page"
     }
   },
   "components": {
@@ -59,7 +70,8 @@
       "roles": {
         "admin": "Admin",
         "player": "Player"
-      }
+      },
+      "boc": "Administration"
     },
     "footer": {
       "copyright": "© 2026 bustit"
