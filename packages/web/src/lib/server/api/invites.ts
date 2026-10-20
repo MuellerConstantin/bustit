@@ -1,6 +1,11 @@
 import 'server-only';
 
-import { type Invite, inviteSchema } from '@bustit/shared';
+import {
+  type CreatedInvite,
+  createdInviteSchema,
+  type Invite,
+  inviteSchema,
+} from '@bustit/shared';
 import { z } from 'zod';
 import { api, bearer } from './client';
 
@@ -9,4 +14,17 @@ export async function listInvites(accessToken: string): Promise<Invite[]> {
   const { data } = await api.get<unknown>('/boc/invites', bearer(accessToken));
 
   return z.array(inviteSchema).parse(data);
+}
+
+/** Creates an invite. The response is the only time its code is available. */
+export async function createInvite(
+  accessToken: string,
+): Promise<CreatedInvite> {
+  const { data } = await api.post<unknown>(
+    '/boc/invites',
+    undefined,
+    bearer(accessToken),
+  );
+
+  return createdInviteSchema.parse(data);
 }

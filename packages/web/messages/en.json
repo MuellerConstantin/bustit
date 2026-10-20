@@ -136,6 +136,18 @@
         "expired": "Expired on {date}"
       },
       "createdAt": "Created on {date}"
+    },
+    "createInvite": {
+      "create": "Create invite",
+      "error": "The invite couldn't be created. Try again."
+    },
+    "inviteCodeDialog": {
+      "title": "Invite created",
+      "description": "Pass this code on. It's shown only now and can't be looked up later.",
+      "copy": "Copy code",
+      "copied": "Copied.",
+      "copyFailed": "Copying didn't work. Select the code and copy it yourself.",
+      "done": "Done"
     }
   },
   "validation": {

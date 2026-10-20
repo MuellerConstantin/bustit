@@ -136,6 +136,18 @@
         "expired": "Abgelaufen am {date}"
       },
       "createdAt": "Erstellt am {date}"
+    },
+    "createInvite": {
+      "create": "Einladung erstellen",
+      "error": "Die Einladung konnte nicht erstellt werden. Versuch es noch mal."
+    },
+    "inviteCodeDialog": {
+      "title": "Einladung erstellt",
+      "description": "Gib diesen Code weiter. Er wird nur jetzt angezeigt und lässt sich später nicht mehr abrufen.",
+      "copy": "Code kopieren",
+      "copied": "Kopiert.",
+      "copyFailed": "Kopieren ging nicht. Markier den Code und kopier ihn selbst.",
+      "done": "Fertig"
     }
   },
   "validation": {

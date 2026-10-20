@@ -1,2 +1,2 @@
 export { login } from './auth';
-export { listInvites } from './invites';
+export { createInvite, listInvites } from './invites';
