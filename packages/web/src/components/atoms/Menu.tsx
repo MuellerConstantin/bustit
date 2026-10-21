@@ -1,5 +1,7 @@
 'use client';
 
+import { Check } from 'lucide-react';
+import { composeRenderProps } from 'react-aria-components/composeRenderProps';
 import {
   Menu as RACMenu,
   MenuItem as RACMenuItem,
@@ -34,6 +36,9 @@ const menuItem = tv({
     isDisabled: {
       true: 'text-muted-foreground forced-colors:text-[GrayText]',
     },
+    isSelected: {
+      true: 'font-semibold',
+    },
   },
 });
 
@@ -47,7 +52,14 @@ export function MenuItem(props: MenuItemProps) {
       {...props}
       textValue={textValue}
       className={(renderProps) => menuItem(renderProps)}
-    />
+    >
+      {composeRenderProps(props.children, (children, { isSelected }) => (
+        <>
+          {children}
+          {isSelected && <Check aria-hidden className="ml-auto h-4 w-4" />}
+        </>
+      ))}
+    </RACMenuItem>
   );
 }
 

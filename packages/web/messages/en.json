@@ -98,6 +98,11 @@
       },
       "boc": "Administration"
     },
+    "i18nLocaleMenu": {
+      "label": "Language",
+      "english": "English",
+      "german": "Deutsch"
+    },
     "footer": {
       "copyright": "© 2026 bustit"
     },

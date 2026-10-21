@@ -5,6 +5,7 @@ import { Avatar } from '@/components/atoms/Avatar';
 import { Link } from '@/components/atoms/Link';
 import { UserMenu } from '@/components/organisms/UserMenu';
 import { auth } from '@/lib/server/auth';
+import { I18nLocaleToggle } from '@/components/molecules/I18nLocaleToggle';
 
 export async function Navbar() {
   const t = await getTranslations('components.navbar');
@@ -15,17 +16,20 @@ export async function Navbar() {
         <Link href="/" aria-label={t('home')} className="no-underline">
           <Image
             src="/images/logo.svg"
-            alt=""
+            alt="Logo"
             width={40}
             height={40}
             priority
             className="size-10"
           />
         </Link>
-        {/* The session is read per request, so the rest of the navbar can be prerendered. */}
-        <Suspense fallback={<Avatar className="m-0.5" />}>
-          <CurrentUserMenu />
-        </Suspense>
+        <div className="flex items-center gap-2">
+          <I18nLocaleToggle />
+          {/* The session is read per request, so the rest of the navbar can be prerendered. */}
+          <Suspense fallback={<Avatar className="m-0.5" />}>
+            <CurrentUserMenu />
+          </Suspense>
+        </div>
       </nav>
     </header>
   );
