@@ -21,6 +21,7 @@ export function UserListSkeleton({ rows = 3 }: UserListSkeletonProps) {
             <Skeleton className="h-3 w-56" />
           </div>
           <Skeleton className="h-4 w-20" />
+          <div className="w-8 shrink-0" />
         </li>
       ))}
     </ul>

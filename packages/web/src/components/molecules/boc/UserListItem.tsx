@@ -55,7 +55,8 @@ export function UserListItem({ user, actions }: UserListItemProps) {
       <span className="shrink-0 text-sm tabular-nums">
         {t('balance', { balance: user.balance })}
       </span>
-      {actions && <div className="shrink-0">{actions}</div>}
+      {/* Kept as wide as the actions button in every row, so the balances line up. */}
+      <div className="w-8 shrink-0">{actions}</div>
     </li>
   );
 }
