@@ -2,22 +2,22 @@ import { z } from 'zod';
 import { pageSchema } from './pagination.js';
 
 /** What a user sees about their own account. */
-export const userProfileSchema = z.object({
+export const ownUserSchema = z.object({
   id: z.string(),
   username: z.string(),
   role: z.enum(['admin', 'player']),
   balance: z.number().int(),
 });
 
-export type UserProfile = z.infer<typeof userProfileSchema>;
+export type OwnUser = z.infer<typeof ownUserSchema>;
 
 /** Another user as far as a list needs them, e.g. who created an invite. */
-export const userReferenceSchema = z.object({
+export const publicUserSchema = z.object({
   id: z.string(),
   username: z.string(),
 });
 
-export type UserReference = z.infer<typeof userReferenceSchema>;
+export type PublicUser = z.infer<typeof publicUserSchema>;
 
 /** A user as the operations console lists them. */
 export const bocUserSchema = z.object({

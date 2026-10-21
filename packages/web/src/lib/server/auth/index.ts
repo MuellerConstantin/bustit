@@ -1,4 +1,4 @@
-import { loginRequestSchema, type UserProfile } from '@bustit/shared';
+import { loginRequestSchema, type OwnUser } from '@bustit/shared';
 import NextAuth from 'next-auth';
 import { getToken } from 'next-auth/jwt';
 import { headers } from 'next/headers';
@@ -6,7 +6,7 @@ import Credentials from 'next-auth/providers/credentials';
 import { login } from '../api';
 import { serverEnv } from '../env';
 
-type Role = UserProfile['role'];
+type Role = OwnUser['role'];
 
 declare module 'next-auth' {
   interface User {

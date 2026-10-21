@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { filterQuerySchema } from './filtering.js';
 import { pageQuerySchema, pageSchema } from './pagination.js';
-import { userReferenceSchema } from './users.js';
+import { publicUserSchema } from './users.js';
 
 export const inviteStatusSchema = z.enum([
   'open',
@@ -32,11 +32,11 @@ export const inviteSchema = z.object({
   id: z.string(),
   title: z.string(),
   status: inviteStatusSchema,
-  createdBy: userReferenceSchema,
+  createdBy: publicUserSchema,
   createdAt: z.iso.datetime(),
   expiresAt: z.iso.datetime(),
   usedAt: z.iso.datetime().nullable(),
-  usedBy: userReferenceSchema.nullable(),
+  usedBy: publicUserSchema.nullable(),
   revokedAt: z.iso.datetime().nullable(),
 });
 

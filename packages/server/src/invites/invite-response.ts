@@ -1,7 +1,7 @@
 import type {
   CreatedInvite as CreatedInviteResponse,
   Invite as InviteResponse,
-  UserReference,
+  PublicUser,
 } from '@bustit/shared';
 import type { Invite } from './invites.schema.js';
 import type { ListedInvite } from './invites.service.js';
@@ -28,7 +28,7 @@ export function toInviteResponse(invite: ListedInvite): InviteResponse {
 export function toCreatedInviteResponse(
   invite: Invite,
   code: string,
-  creator: UserReference,
+  creator: PublicUser,
 ): CreatedInviteResponse {
   return {
     invite: toInviteResponse({

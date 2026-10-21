@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { userProfileSchema } from './users.js';
+import { ownUserSchema } from './users.js';
 
 /*
  * The rules are exported on their own as well, so forms can apply them with
@@ -49,7 +49,7 @@ export const loginResponseSchema = z.object({
   accessToken: z.string(),
   /** ISO 8601; the token has to be replaced by logging in again by then. */
   expiresAt: z.iso.datetime(),
-  user: userProfileSchema,
+  user: ownUserSchema,
 });
 
 export type LoginResponse = z.infer<typeof loginResponseSchema>;

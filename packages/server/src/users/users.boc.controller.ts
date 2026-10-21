@@ -1,5 +1,9 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { type PageQuery, type BocUserPage, pageQuerySchema } from '@bustit/shared';
+import {
+  type PageQuery,
+  type BocUserPage,
+  pageQuerySchema,
+} from '@bustit/shared';
 // Imported from the file rather than the auth module's index, which imports
 // this module in turn.
 import { Roles } from '../auth/roles.js';

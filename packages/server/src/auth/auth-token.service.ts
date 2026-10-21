@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SignJWT, jwtVerify } from 'jose';
 import type { Env } from '../infrastructure/config/index.js';
-import { type User, toUserProfile } from '../users/index.js';
+import { type User, toOwnUser } from '../users/index.js';
 
 const VALIDITY_DAYS = 30;
 const ALGORITHM = 'HS256';
@@ -58,7 +58,7 @@ export class AuthTokenService {
     return {
       accessToken: token,
       expiresAt: expiresAt.toISOString(),
-      user: toUserProfile(user),
+      user: toOwnUser(user),
     };
   }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import type { UserProfile } from '@bustit/shared';
+import type { OwnUser } from '@bustit/shared';
 import { LogOut, ShieldUser } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { logoutAction } from '@/actions/auth';
@@ -17,7 +17,7 @@ import { useRouter } from '@/i18n/navigation';
 
 interface UserMenuProps {
   username: string;
-  role: UserProfile['role'];
+  role: OwnUser['role'];
 }
 
 export function UserMenu({ username, role }: UserMenuProps) {
