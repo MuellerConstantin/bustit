@@ -1,10 +1,31 @@
-import type { InvitePage, InviteStatus } from '@bustit/shared';
+import {
+  type InvitePage,
+  type InviteStatus,
+  inviteStatusSchema,
+} from '@bustit/shared';
 import { useSWRConfig } from 'swr';
-import useSWRInfinite from 'swr/infinite';
+import useSWRInfinite, { unstable_serialize } from 'swr/infinite';
 import { fetcher } from '@/lib/client/bff';
 
 const PATH = '/boc/invites';
 const PER_PAGE = 20;
+
+/** The keys of the pages of one invite list, narrowed by `status` if given. */
+function pageKeysOf(status?: InviteStatus) {
+  return (pageIndex: number, previous: InvitePage | null) => {
+    if (previous && previous.info.page + 1 >= previous.info.totalPages) {
+      return null;
+    }
+
+    const params = new URLSearchParams({
+      page: String(pageIndex),
+      perPage: String(PER_PAGE),
+      ...(status && { filter: `status==${status}` }),
+    });
+
+    return `${PATH}?${params}`;
+  };
+}
 
 interface UseInvitesOptions {
   /** Lists only the invites with this status. */
@@ -18,19 +39,7 @@ interface UseInvitesOptions {
  */
 export function useInvites({ status }: UseInvitesOptions = {}) {
   const { data, error, isLoading, size, setSize, mutate } =
-    useSWRInfinite<InvitePage>((pageIndex, previous: InvitePage | null) => {
-      if (previous && previous.info.page + 1 >= previous.info.totalPages) {
-        return null;
-      }
-
-      const params = new URLSearchParams({
-        page: String(pageIndex),
-        perPage: String(PER_PAGE),
-        ...(status && { filter: `status==${status}` }),
-      });
-
-      return `${PATH}?${params}`;
-    }, fetcher);
+    useSWRInfinite<InvitePage>(pageKeysOf(status), fetcher);
 
   const invites = data
     ? [
@@ -59,5 +68,15 @@ export function useInvites({ status }: UseInvitesOptions = {}) {
 export function useReloadInvites() {
   const { mutate } = useSWRConfig();
 
-  return () => mutate((key) => typeof key === 'string' && key.includes(PATH));
+  /*
+   * A filter passed to the global mutate skips the keys of `useSWRInfinite`,
+   * so each list is addressed by the key it is cached under instead. Keys of
+   * lists that were never loaded are ignored.
+   */
+  return () =>
+    Promise.all(
+      [undefined, ...inviteStatusSchema.options].map((status) =>
+        mutate(unstable_serialize(pageKeysOf(status))),
+      ),
+    );
 }
