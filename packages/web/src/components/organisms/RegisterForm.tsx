@@ -10,9 +10,11 @@ import { ArrowRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { z } from 'zod';
+import { registerAction } from '@/actions/auth';
 import { Button } from '@/components/atoms/Button';
 import { Form } from '@/components/atoms/Form';
 import { TextField } from '@/components/atoms/TextField';
+import { useRouter } from '@/i18n/navigation';
 import { textFieldProps, zodValidate } from '@/lib/formik';
 
 interface RegisterFormValues {
@@ -22,8 +24,12 @@ interface RegisterFormValues {
   passwordConfirmation: string;
 }
 
+/** Why the last submit failed; kept in Formik's `status`. */
+type RegisterFailure = 'invalidInvite' | 'usernameTaken' | 'unavailable';
+
 export function RegisterForm() {
   const t = useTranslations('components.registerForm');
+  const router = useRouter();
   const tValidation = useTranslations('validation');
   const usernameRule = tValidation('rules.username');
   const passwordRule = tValidation('rules.password', {
@@ -69,9 +75,38 @@ export function RegisterForm() {
       passwordConfirmation: '',
     },
     validate: zodValidate(schema),
-    // Sent to the API in a later step.
-    onSubmit: () => undefined,
+    onSubmit: async (values, { setStatus }) => {
+      setStatus(undefined);
+
+      let result;
+
+      try {
+        result = await registerAction({
+          inviteCode: values.inviteCode,
+          username: values.username,
+          password: values.password,
+        });
+      } catch {
+        // The server has logged the cause; users only learn to try later.
+        setStatus('unavailable' satisfies RegisterFailure);
+        return;
+      }
+
+      if ('error' in result) {
+        // The form applies the server's rules, so it only refuses tampered input.
+        setStatus(
+          (result.error === 'invalid'
+            ? 'unavailable'
+            : result.error) satisfies RegisterFailure,
+        );
+        return;
+      }
+
+      router.replace('/');
+    },
   });
+
+  const failure = formik.status as RegisterFailure | undefined;
 
   return (
     <Form onSubmit={formik.handleSubmit} validationBehavior="aria">
@@ -104,6 +139,11 @@ export function RegisterForm() {
         autoComplete="new-password"
         isRequired
       />
+      {failure && (
+        <p role="alert" className="text-sm text-destructive">
+          {t(`errors.${failure}`)}
+        </p>
+      )}
       <Button
         type="submit"
         className="mt-2 h-11 w-full font-semibold"

@@ -80,7 +80,10 @@
       "passwordConfirmation": "Passwort wiederholen",
       "submit": "Konto erstellen",
       "errors": {
-        "inviteCodeRequired": "Bitte gib deinen Einladungscode ein."
+        "inviteCodeRequired": "Bitte gib deinen Einladungscode ein.",
+        "invalidInvite": "Mit dem Code kommst du hier nicht rein.",
+        "usernameTaken": "Der Name ist schon vergeben. Such dir einen anderen.",
+        "unavailable": "Gerade ist hier dicht. Versuch es später noch mal."
       }
     },
     "navbar": {

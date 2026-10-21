@@ -1,4 +1,4 @@
-export { login } from './auth';
+export { type RegisterOutcome, login, register } from './auth';
 export {
   type RevokeOutcome,
   createInvite,

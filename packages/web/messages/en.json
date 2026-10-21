@@ -80,7 +80,10 @@
       "passwordConfirmation": "Repeat password",
       "submit": "Create account",
       "errors": {
-        "inviteCodeRequired": "Please enter your invite code."
+        "inviteCodeRequired": "Please enter your invite code.",
+        "invalidInvite": "That code won't get you in here.",
+        "usernameTaken": "That name's taken. Pick another one.",
+        "unavailable": "We're closed right now. Try again later."
       }
     },
     "navbar": {
