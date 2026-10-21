@@ -29,8 +29,8 @@ bustit is a blackjack table in the browser for closed groups. You sit down toget
 play against the dealer and watch each other's luck, with nothing to install.
 
 - **Closed groups.** There is no open sign-up. You get in with an invite from an admin.
-- **Play money, nothing else.** Every player gets a starting balance of chips. Chips can't be bought,
-  paid out or traded for anything, so all that's at stake is bragging rights.
+- **Play money, nothing else.** Every player gets a starting balance of Bucks, bustit's play currency.
+  Bucks can't be bought, paid out or traded for anything, so all that's at stake is bragging rights.
 - **Fair by design.** The server shuffles, deals and settles every hand. Nobody's browser decides
   anything, and nobody sees a card before it is turned over.
 
@@ -44,7 +44,7 @@ signing up and logging in exist.
 - Classic blackjack against the dealer: hit, stand, double down and split, a blackjack pays 3:2
 - Backbets: spectators and players can bet on another player's seat and ride along with their hand,
   but never on their own
-- A balance of play chips that every bet, win and loss is booked against, with a starting balance
+- A balance in Bucks that every bet, win and loss is booked against, with a starting balance
   for new players
 - German and English
 

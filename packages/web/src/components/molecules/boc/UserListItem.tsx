@@ -2,6 +2,7 @@ import type { BocUser } from '@bustit/shared';
 import { useFormatter, useTranslations } from 'next-intl';
 import { Avatar } from '@/components/atoms/Avatar';
 import { Badge } from '@/components/atoms/Badge';
+import { Bill } from '@/components/atoms/Bill';
 
 interface UserListItemProps {
   user: BocUser;
@@ -52,7 +53,8 @@ export function UserListItem({ user, actions }: UserListItemProps) {
           )}
         </span>
       </div>
-      <span className="shrink-0 text-sm tabular-nums">
+      <span className="flex shrink-0 items-center gap-1.5 text-sm tabular-nums">
+        <Bill />
         {t('balance', { balance: user.balance })}
       </span>
       {/* Kept as wide as the actions button in every row, so the balances line up. */}

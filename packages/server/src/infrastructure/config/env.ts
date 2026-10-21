@@ -9,7 +9,7 @@ export const envSchema = z.object({
     .default('info'),
   LOG_DIR: z.string().min(1).default('./logs'),
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
-  /** Chips booked once to every new account. */
+  /** Bucks booked once to every new account. */
   STARTING_BALANCE: z.coerce.number().int().positive().default(1000),
   /** Days an invite code can be redeemed after it was created. */
   INVITE_VALIDITY_DAYS: z.coerce.number().int().positive().default(7),

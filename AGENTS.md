@@ -13,7 +13,7 @@ and the checks a change has to pass. This file doesn't repeat them.
 ## Product Constraints
 
 - **Play money only**: The balance has no real-world value. Never add
-  anything that would give it one, such as buying chips, paying them out or
+  anything that would give it one, such as buying Bucks, paying them out or
   trading them for prizes. If a feature seems to need that, raise it instead
   of building it.
 
@@ -169,7 +169,7 @@ folders themselves for that.
 - **Columns come with the feature that needs them**: Tables start with what
   their first feature uses and grow through further migrations.
 - **Ids are UUIDv7, amounts are integers**: Primary keys default to
-  Postgres' `uuidv7()`, which sorts by creation time. Amounts are whole chips
+  Postgres' `uuidv7()`, which sorts by creation time. Amounts are whole Bucks
   stored as `bigint`.
 - **Migrations are generated, committed and run before the start**: Schema
   changes go through `npm run db:generate -w @bustit/server`. Generated

@@ -199,7 +199,7 @@
       "disabled": "Disabled",
       "createdAt": "Registered on {date}",
       "disabledAt": "Disabled on {date}",
-      "balance": "{balance, number} chips"
+      "balance": "{balance, number} Bucks"
     },
     "deleteUser": {
       "actions": "Actions for “{username}”",

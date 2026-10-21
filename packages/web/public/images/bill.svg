@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 320">
+<defs>
+  <clipPath id="front"><rect x="80" y="84" width="416" height="220" rx="14"/></clipPath>
+  <clipPath id="l"><path d="M0 0 L256 0 L256 30 L244 120 L272 182 L236 250 L270 312 L256 372 L256 512 L0 512 Z"/></clipPath>
+  <clipPath id="r"><path d="M512 0 L256 0 L256 30 L244 120 L272 182 L236 250 L270 312 L256 372 L256 512 L512 512 Z"/></clipPath>
+  <path id="spade" d="M256 56 C256 56 196 142 136 196 C96 232 72 266 72 306 C72 360 116 400 170 400 C206 400 234 384 248 362 C246 404 228 436 188 456 L324 456 C284 436 266 404 264 362 C278 384 306 400 342 400 C396 400 440 360 440 306 C440 266 416 232 376 196 C316 142 256 56 256 56 Z"/>
+  <!-- Corner bracket, drawn twice: a wide ink stroke under a cream one gives it the logo's outline -->
+  <path id="bracket" d="M0 34 L0 0 L34 0" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <linearGradient id="spadeShade" gradientUnits="userSpaceOnUse" x1="120" y1="100" x2="400" y2="460">
+    <stop offset="0.62" stop-color="#eee3c8"/><stop offset="0.62" stop-color="#cdbf9f"/>
+  </linearGradient>
+  <filter id="grime" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="11"/>
+    <feColorMatrix values="0 0 0 0 0.03  0 0 0 0 0.04  0 0 0 0 0.03  0 0 0 2.2 -1.1"/>
+    <feComposite in2="SourceGraphic" operator="in"/>
+  </filter>
+  <filter id="speckle" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="1" seed="4"/>
+    <feColorMatrix values="0 0 0 0 0.02  0 0 0 0 0.03  0 0 0 0 0.02  0 0 0 9 -6.2"/>
+    <feComposite in2="SourceGraphic" operator="in"/>
+  </filter>
+  <radialGradient id="edgeWeight" cx="0.5" cy="0.5" r="0.6">
+    <stop offset="0.5" stop-color="#fff" stop-opacity="0.25"/><stop offset="1" stop-color="#fff"/>
+  </radialGradient>
+</defs>
+<!-- Two bills behind, in the shadow tone so the front one stands out -->
+<rect x="16" y="16" width="416" height="220" rx="14" fill="#0e5527" stroke="#0b0e0c" stroke-width="12"/>
+<rect x="48" y="50" width="416" height="220" rx="14" fill="#11632e" stroke="#0b0e0c" stroke-width="12"/>
+<!-- Front bill with the logo's hard cel shadow -->
+<rect x="80" y="84" width="416" height="220" rx="14" fill="#0e5527"/>
+<g clip-path="url(#front)">
+  <rect x="72" y="74" width="416" height="220" rx="14" fill="#16873f"/>
+  <path d="M150 230 L184 218" stroke="#7fd39b" stroke-width="4" stroke-linecap="round" opacity="0.55"/><path d="M400 150 L432 138" stroke="#7fd39b" stroke-width="4" stroke-linecap="round" opacity="0.55"/><path d="M330 272 L366 276" stroke="#7fd39b" stroke-width="4" stroke-linecap="round" opacity="0.55"/>
+</g>
+<!-- Corner brackets -->
+<g stroke="#0b0e0c" stroke-width="22">
+  <use href="#bracket" transform="translate(112 116)"/><use href="#bracket" transform="translate(464 116) rotate(90)"/>
+  <use href="#bracket" transform="translate(464 272) rotate(180)"/><use href="#bracket" transform="translate(112 272) rotate(270)"/>
+</g>
+<g stroke="#eee3c8" stroke-width="10">
+  <use href="#bracket" transform="translate(112 116)"/><use href="#bracket" transform="translate(464 116) rotate(90)"/>
+  <use href="#bracket" transform="translate(464 272) rotate(180)"/><use href="#bracket" transform="translate(112 272) rotate(270)"/>
+</g>
+<!-- Medallion: the chip's inner field with the split spade -->
+<circle cx="288" cy="194" r="66" fill="#101512" stroke="#0b0e0c" stroke-width="10"/>
+<circle cx="288" cy="194" r="54" fill="none" stroke="#eee3c8" stroke-width="5" stroke-dasharray="12 10" opacity="0.7"/>
+<g transform="translate(288 199) scale(0.19) translate(-256 -256)">
+  <g clip-path="url(#l)" transform="rotate(-5 256 372) translate(-8 0)"><use href="#spade" fill="url(#spadeShade)"/></g>
+  <g clip-path="url(#r)" transform="rotate(5 256 372) translate(8 0)"><use href="#spade" fill="url(#spadeShade)"/></g>
+  <path d="M248 366 C246 404 228 436 188 456 L324 456 C284 436 266 404 264 366 Z" fill="url(#spadeShade)"/>
+</g>
+<!-- Dirt over the front bill, then its outline on top -->
+<rect x="80" y="84" width="416" height="220" rx="14" fill="url(#edgeWeight)" filter="url(#grime)" opacity="0.75"/>
+<rect x="80" y="84" width="416" height="220" rx="14" fill="url(#edgeWeight)" filter="url(#speckle)"/>
+<rect x="80" y="84" width="416" height="220" rx="14" fill="none" stroke="#0b0e0c" stroke-width="12"/>
+</svg>

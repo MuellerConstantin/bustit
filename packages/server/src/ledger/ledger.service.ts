@@ -11,7 +11,7 @@ import { type LedgerReason, ledger } from './ledger.schema.js';
 
 export type Booking = {
   readonly userId: string;
-  /** Positive to credit, negative to debit, in whole chips. */
+  /** Positive to credit, negative to debit, in whole Bucks. */
   readonly delta: number;
   readonly reason: LedgerReason;
   readonly ref?: string;

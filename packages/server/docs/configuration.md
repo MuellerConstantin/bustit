@@ -57,7 +57,7 @@ migration tool reads `DATABASE_URL` from the same environment files.
 
 | Environment Variable | Description                                                               | Required |
 | -------------------- | ------------------------------------------------------------------------- | -------- |
-| STARTING_BALANCE     | Chips booked once to every new account. Default is `1000`.                | No       |
+| STARTING_BALANCE     | Bucks booked once to every new account. Default is `1000`.                | No       |
 | INVITE_VALIDITY_DAYS | Days an invite code can be redeemed after it was created. Default is `7`. | No       |
 
 ### Logging Configuration

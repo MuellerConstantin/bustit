@@ -23,7 +23,7 @@ import { users } from '../users/index.js';
  * - `refund`: credit of stakes back when a round is aborted, e.g. by a
  *   server restart.
  * - `daily_bonus`: credit of the daily bonus.
- * - `rebuy`: credit of fresh chips to a user who ran out.
+ * - `rebuy`: credit of fresh Bucks to a user who ran out.
  * - `admin_adjust`: correction by an admin, credit or debit.
  */
 export const ledgerReason = pgEnum('ledger_reason', [
