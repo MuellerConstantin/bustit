@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { BocInvitesController } from './boc-invites.controller.js';
+import { InvitesBocController } from './invites.boc.controller.js';
 import { InvitesService } from './invites.service.js';
 
 @Module({
-  controllers: [BocInvitesController],
+  controllers: [InvitesBocController],
   providers: [InvitesService],
   exports: [InvitesService],
 })

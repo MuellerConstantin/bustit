@@ -222,8 +222,8 @@ folders themselves for that.
 - **Management lives in the operations console (BOC)**: Routes for running
   the game live under `/api/boc/...`, short for Bustit Operations Console.
   The prefix names the purpose, not a role; which roles may use a route is
-  set with `@Roles`. Each feature module has its own BOC controller instead
-  of one module for all of them.
+  set with `@Roles`. Each feature module has its own BOC controller, named
+  `<feature>.boc.controller.ts`, instead of one module for all of them.
 - **Login reveals nothing about accounts**: Unknown users, wrong passwords and
   disabled accounts get the same answer, and unknown users are checked
   against a dummy hash so the response time doesn't tell them apart.

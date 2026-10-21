@@ -35,7 +35,7 @@ import { InvitesService } from './invites.service.js';
 /** Invites in the operations console. */
 @Roles('admin')
 @Controller('boc/invites')
-export class BocInvitesController {
+export class InvitesBocController {
   constructor(private readonly invitesService: InvitesService) {}
 
   /** The response is the only time the plain code is available. */
