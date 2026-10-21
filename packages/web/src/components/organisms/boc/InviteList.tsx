@@ -3,15 +3,19 @@
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Button } from '@/components/atoms/Button';
+import { SearchField } from '@/components/atoms/SearchField';
 import { Switch } from '@/components/atoms/Switch';
 import { InviteListItem } from '@/components/molecules/boc/InviteListItem';
 import { InviteListSkeleton } from '@/components/molecules/boc/InviteListSkeleton';
 import { RevokeInvite } from '@/components/organisms/boc/RevokeInvite';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useInvites } from '@/hooks/useInvites';
 
 export function InviteList() {
   const t = useTranslations('components.inviteList');
   const [onlyOpen, setOnlyOpen] = useState(true);
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search.trim());
   const {
     invites,
     totalElements,
@@ -21,17 +25,26 @@ export function InviteList() {
     loadMore,
     error,
     reload,
-  } = useInvites({ status: onlyOpen ? 'open' : undefined });
+  } = useInvites({
+    status: onlyOpen ? 'open' : undefined,
+    search: debouncedSearch || undefined,
+  });
 
   return (
     <div className="flex flex-col gap-4">
-      <Switch
-        isSelected={onlyOpen}
-        onChange={setOnlyOpen}
-        className="self-start"
-      >
-        {t('onlyOpen')}
-      </Switch>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <SearchField
+          aria-label={t('search')}
+          placeholder={t('searchPlaceholder')}
+          clearLabel={t('clearSearch')}
+          value={search}
+          onChange={setSearch}
+          className="w-full sm:w-80"
+        />
+        <Switch isSelected={onlyOpen} onChange={setOnlyOpen}>
+          {t('onlyOpen')}
+        </Switch>
+      </div>
 
       {isLoading && (
         <div aria-busy>
@@ -52,7 +65,11 @@ export function InviteList() {
 
       {invites?.length === 0 && (
         <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-          {onlyOpen ? t('emptyOpen') : t('empty')}
+          {debouncedSearch
+            ? t('noMatches', { search: debouncedSearch })
+            : onlyOpen
+              ? t('emptyOpen')
+              : t('empty')}
         </p>
       )}
 

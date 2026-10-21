@@ -122,7 +122,11 @@
       "empty": "Noch keine Einladungen.",
       "emptyOpen": "Keine offenen Einladungen.",
       "shown": "{shown} von {total} angezeigt",
-      "loadMore": "Mehr laden"
+      "loadMore": "Mehr laden",
+      "search": "Einladungen suchen",
+      "searchPlaceholder": "Titel oder Benutzername",
+      "clearSearch": "Suche leeren",
+      "noMatches": "Keine Einladungen zu „{search}“."
     },
     "inviteListItem": {
       "status": {
@@ -181,7 +185,11 @@
       "error": "Die Benutzer konnten nicht geladen werden.",
       "retry": "Erneut versuchen",
       "shown": "{shown} von {total} angezeigt",
-      "loadMore": "Mehr laden"
+      "loadMore": "Mehr laden",
+      "search": "Benutzer suchen",
+      "searchPlaceholder": "Benutzername",
+      "clearSearch": "Suche leeren",
+      "noMatches": "Keine Benutzer zu „{search}“."
     },
     "userListItem": {
       "role": {

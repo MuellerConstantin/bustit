@@ -122,7 +122,11 @@
       "empty": "No invites yet.",
       "emptyOpen": "No open invites.",
       "shown": "{shown} of {total} shown",
-      "loadMore": "Load more"
+      "loadMore": "Load more",
+      "search": "Search invites",
+      "searchPlaceholder": "Title or username",
+      "clearSearch": "Clear search",
+      "noMatches": "No invites match “{search}”."
     },
     "inviteListItem": {
       "status": {
@@ -181,7 +185,11 @@
       "error": "The users couldn't be loaded.",
       "retry": "Try again",
       "shown": "{shown} of {total} shown",
-      "loadMore": "Load more"
+      "loadMore": "Load more",
+      "search": "Search users",
+      "searchPlaceholder": "Username",
+      "clearSearch": "Clear search",
+      "noMatches": "No users match “{search}”."
     },
     "userListItem": {
       "role": {

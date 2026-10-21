@@ -1,10 +1,13 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { Button } from '@/components/atoms/Button';
+import { SearchField } from '@/components/atoms/SearchField';
 import { UserListItem } from '@/components/molecules/boc/UserListItem';
 import { UserListSkeleton } from '@/components/molecules/boc/UserListSkeleton';
 import { DeleteUser } from '@/components/organisms/boc/DeleteUser';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useUsers } from '@/hooks/useUsers';
 
 interface UserListProps {
@@ -14,6 +17,8 @@ interface UserListProps {
 
 export function UserList({ currentUserId }: UserListProps) {
   const t = useTranslations('components.userList');
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search.trim());
   const {
     users,
     totalElements,
@@ -23,10 +28,19 @@ export function UserList({ currentUserId }: UserListProps) {
     loadMore,
     error,
     reload,
-  } = useUsers();
+  } = useUsers({ search: debouncedSearch || undefined });
 
   return (
     <div className="flex flex-col gap-4">
+      <SearchField
+        aria-label={t('search')}
+        placeholder={t('searchPlaceholder')}
+        clearLabel={t('clearSearch')}
+        value={search}
+        onChange={setSearch}
+        className="w-full sm:w-80"
+      />
+
       {isLoading && (
         <div aria-busy>
           <span className="sr-only">{t('loading')}</span>
@@ -42,6 +56,13 @@ export function UserList({ currentUserId }: UserListProps) {
             {t('retry')}
           </Button>
         </div>
+      )}
+
+      {/* Without a search the list has at least the admin who views it. */}
+      {users?.length === 0 && (
+        <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+          {t('noMatches', { search: debouncedSearch })}
+        </p>
       )}
 
       {users && users.length > 0 && (

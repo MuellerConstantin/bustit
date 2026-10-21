@@ -2,7 +2,7 @@ import 'server-only';
 
 import {
   type BocUserPage,
-  type PageQuery,
+  type ListUsersQuery,
   bocUserPageSchema,
 } from '@bustit/shared';
 import { HttpStatusCode, isAxiosError } from 'axios';
@@ -11,7 +11,7 @@ import { api, bearer } from './client';
 /** One page of the users, newest first. Only admins may list them. */
 export async function listUsers(
   accessToken: string,
-  query: PageQuery,
+  query: ListUsersQuery,
 ): Promise<BocUserPage> {
   const { data } = await api.get<unknown>('/boc/users', {
     ...bearer(accessToken),
