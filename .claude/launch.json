@@ -12,6 +12,19 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "-w", "@bustit/server"],
       "port": 8080
+    },
+    {
+      "name": "storybook",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "storybook",
+        "-w",
+        "@bustit/web",
+        "--",
+        "--no-open"
+      ],
+      "port": 6006
     }
   ]
 }
