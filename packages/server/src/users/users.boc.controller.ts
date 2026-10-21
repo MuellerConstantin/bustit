@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Controller,
   Delete,
@@ -10,15 +11,16 @@ import {
   Query,
 } from '@nestjs/common';
 import {
-  type PageQuery,
   type BocUserPage,
-  pageQuerySchema,
+  type ListUsersQuery,
+  listUsersQuerySchema,
 } from '@bustit/shared';
 import { z } from 'zod';
 // Imported from the file rather than the auth module's index, which imports
 // this module in turn.
 import { type AuthenticatedUser, CurrentUser } from '../auth/current-user.js';
 import { Roles } from '../auth/roles.js';
+import { InvalidFilterError } from '../infrastructure/filtering/index.js';
 import { pageOf } from '../infrastructure/pagination/index.js';
 import { ZodValidationPipe } from '../infrastructure/validation/index.js';
 import { toBocUser } from './boc-user.js';
@@ -33,10 +35,19 @@ export class UsersBocController {
 
   @Get()
   async list(
-    @Query(new ZodValidationPipe(pageQuerySchema)) query: PageQuery,
+    @Query(new ZodValidationPipe(listUsersQuerySchema))
+    query: ListUsersQuery,
   ): Promise<BocUserPage> {
-    const { users, totalElements } = await this.usersService.list(query);
-    return pageOf(users.map(toBocUser), totalElements, query);
+    try {
+      const { users, totalElements } = await this.usersService.list(query);
+      return pageOf(users.map(toBocUser), totalElements, query);
+    } catch (error) {
+      if (error instanceof InvalidFilterError) {
+        throw new BadRequestException(error.message);
+      }
+
+      throw error;
+    }
   }
 
   @Delete(':id')

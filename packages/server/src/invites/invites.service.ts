@@ -17,6 +17,7 @@ import {
   sql,
 } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
+import { z } from 'zod';
 import type { Env } from '../infrastructure/config/index.js';
 import {
   type FilterFields,
@@ -34,6 +35,13 @@ import {
 } from './invites.errors.js';
 import { users } from '../users/index.js';
 import { type Invite, invites } from './invites.schema.js';
+
+/*
+ * The users table joined twice, once per role. Declared once, so the filter
+ * fields refer to the same aliases the queries join.
+ */
+const creator = alias(users, 'creator');
+const invitee = alias(users, 'invitee');
 
 export type CreatedInvite = {
   readonly invite: Invite;
@@ -65,6 +73,21 @@ const filterFields = {
     expression: status,
     operators: ['==', '!=', '=in=', '=out='],
     value: inviteStatusSchema,
+  },
+  title: {
+    expression: invites.title,
+    operators: ['=like='],
+    value: z.string(),
+  },
+  'createdBy.username': {
+    expression: creator.username,
+    operators: ['==', '=like='],
+    value: z.string(),
+  },
+  'usedBy.username': {
+    expression: invitee.username,
+    operators: ['==', '=like='],
+    value: z.string(),
   },
 } satisfies FilterFields;
 
@@ -108,8 +131,6 @@ export class InvitesService {
     invites: ListedInvite[];
     totalElements: number;
   }> {
-    const creator = alias(users, 'creator');
-    const invitee = alias(users, 'invitee');
     const where = whereOf(filter, filterFields);
 
     const [listed, [total]] = await Promise.all([
@@ -127,7 +148,13 @@ export class InvitesService {
         .orderBy(desc(invites.createdAt), desc(invites.id))
         .limit(perPage)
         .offset(page * perPage),
-      this.db.select({ value: count() }).from(invites).where(where),
+      // Joined like the page, as the filter may refer to the users.
+      this.db
+        .select({ value: count() })
+        .from(invites)
+        .innerJoin(creator, eq(invites.createdBy, creator.id))
+        .leftJoin(invitee, eq(invites.usedBy, invitee.id))
+        .where(where),
     ]);
 
     return { invites: listed, totalElements: total!.value };

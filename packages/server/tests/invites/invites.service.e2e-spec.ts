@@ -13,6 +13,7 @@ import {
   DEFAULT_INVITE_TITLE,
   createPlayer,
   getAdmin,
+  uniqueUsername,
 } from '../../seed/factories.js';
 import { type TestApp, createTestApp } from '../utils/test-app.js';
 
@@ -221,6 +222,45 @@ describe('InvitesService', () => {
         true,
       );
       expect(result.totalElements).toBe(result.invites.length);
+    });
+
+    it('searches the titles, the total count included', async () => {
+      const title = `Search ${uniqueUsername()}`;
+      const match = await service.create(adminId, title);
+      await service.create(adminId, DEFAULT_INVITE_TITLE);
+
+      const result = await service.list({
+        filter: `title=like="*${title.slice(7).toUpperCase()}*"`,
+        page: 0,
+        perPage: MAX_PAGE_SIZE,
+      });
+
+      expect(result.invites.map(({ id }) => id)).toEqual([match.invite.id]);
+      expect(result.totalElements).toBe(1);
+    });
+
+    it('searches the usernames of who created and used an invite', async () => {
+      const used = await service.create(adminId, DEFAULT_INVITE_TITLE);
+      const open = await service.create(adminId, DEFAULT_INVITE_TITLE);
+      const player = await useUp(used.code);
+
+      const byInvitee = await service.list({
+        filter: `usedBy.username=like=*${player.username.slice(2)}`,
+        page: 0,
+        perPage: MAX_PAGE_SIZE,
+      });
+      const byCreator = await service.list({
+        filter: `createdBy.username==${adminUsername}`,
+        page: 0,
+        perPage: MAX_PAGE_SIZE,
+      });
+
+      expect(byInvitee.invites.map(({ id }) => id)).toEqual([used.invite.id]);
+      expect(byInvitee.totalElements).toBe(1);
+      expect(byCreator.invites.map(({ id }) => id)).toEqual(
+        expect.arrayContaining([used.invite.id, open.invite.id]),
+      );
+      expect(byCreator.totalElements).toBe(byCreator.invites.length);
     });
 
     it('keeps a used invite used once it expires', async () => {

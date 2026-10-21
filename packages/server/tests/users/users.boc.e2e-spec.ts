@@ -112,12 +112,29 @@ describe('/api/boc/users (e2e)', () => {
       );
     });
 
-    it.each([{ page: -1 }, { perPage: 0 }, { perPage: MAX_PAGE_SIZE + 1 }])(
-      'rejects the query %j',
-      async (query) => {
-        await listUsers(query).expect(400);
-      },
-    );
+    it('finds a user by part of the username', async () => {
+      const player = await createPlayer(app);
+      await createPlayer(app);
+
+      const { content, info } = await listedUsers({
+        filter: `username=like=*${player.username.slice(2)}`,
+      });
+
+      expect(content.map(({ id }) => id)).toEqual([player.id]);
+      expect(info.totalElements).toBe(1);
+    });
+
+    it.each([
+      { page: -1 },
+      { perPage: 0 },
+      { perPage: MAX_PAGE_SIZE + 1 },
+      { filter: 'username=' },
+      { filter: 'username!=admin' },
+      { filter: 'role==admin' },
+      { filter: 'passwordHash==abc' },
+    ])('rejects the query %j', async (query) => {
+      await listUsers(query).expect(400);
+    });
   });
 
   describe('DELETE /api/boc/users/:id', () => {

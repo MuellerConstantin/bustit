@@ -37,6 +37,22 @@ describe('UsersService', () => {
       expect(first.users.map(({ id }) => id)).toEqual([newest.id, middle.id]);
       expect(second.users[0]?.id).toBe(oldest.id);
     });
+
+    it('searches the usernames, the total count included', async () => {
+      const match = await createPlayer(app);
+      const other = await createPlayer(app);
+      const part = match.username.slice(2, 8).toUpperCase();
+
+      const result = await service.list({
+        filter: `username=like="*${part}*"`,
+        page: 0,
+        perPage: 100,
+      });
+
+      expect(result.users.map(({ id }) => id)).toEqual([match.id]);
+      expect(result.users.map(({ id }) => id)).not.toContain(other.id);
+      expect(result.totalElements).toBe(1);
+    });
   });
 
   describe('delete', () => {

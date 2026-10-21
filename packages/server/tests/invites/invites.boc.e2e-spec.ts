@@ -180,6 +180,24 @@ describe('/api/boc/invites (e2e)', () => {
       expect(content.every(({ status }) => status === 'revoked')).toBe(true);
     });
 
+    it('combines the search with the status', async () => {
+      const title = `Search ${uniqueUsername()}`;
+      const open = createdInviteSchema.parse(
+        (await createInvite(asAdmin, { title }).expect(201)).body,
+      );
+      const revoked = createdInviteSchema.parse(
+        (await createInvite(asAdmin, { title }).expect(201)).body,
+      );
+      await revoke(revoked.invite.id).expect(204);
+
+      const { content, info } = await listedInvites({
+        filter: `status==open;title=like="*${title.slice(7)}*"`,
+      });
+
+      expect(content.map(({ id }) => id)).toEqual([open.invite.id]);
+      expect(info.totalElements).toBe(1);
+    });
+
     it.each([
       { page: -1 },
       { perPage: 0 },
@@ -189,6 +207,8 @@ describe('/api/boc/invites (e2e)', () => {
       { filter: 'status==unknown' },
       { filter: 'codeHash==abc' },
       { filter: 'status=like=open' },
+      { filter: 'title==Max' },
+      { filter: 'createdBy.id==abc' },
     ])('rejects the query %j', async (query) => {
       await listInvites(query).expect(400);
     });

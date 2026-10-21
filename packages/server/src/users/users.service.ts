@@ -1,7 +1,12 @@
-import type { PageQuery } from '@bustit/shared';
+import type { ListUsersQuery } from '@bustit/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectDrizzle } from '@nestjs/drizzle';
 import { and, count, desc, eq, isNull, sql } from 'drizzle-orm';
+import { z } from 'zod';
+import {
+  type FilterFields,
+  whereOf,
+} from '../infrastructure/filtering/index.js';
 import {
   type Database,
   type Transaction,
@@ -22,6 +27,15 @@ export type NewUser = {
 };
 
 const notDeleted = isNull(users.deletedAt);
+
+/** What the users can be filtered on. */
+const filterFields = {
+  username: {
+    expression: users.username,
+    operators: ['==', '=like='],
+    value: z.string(),
+  },
+} satisfies FilterFields;
 
 /** Deleted users are left out of every lookup and list. */
 @Injectable()
@@ -45,20 +59,28 @@ export class UsersService {
     return user ?? null;
   }
 
-  /** One page of the users, newest first, and how many there are in all. */
-  async list({ page, perPage }: PageQuery): Promise<{
+  /**
+   * One page of the users, newest first, and how many there are in all.
+   * Both are narrowed by the filter if one is given.
+   *
+   * @throws InvalidFilterError if the filter isn't valid or asks for more
+   *   than `filterFields` allows.
+   */
+  async list({ filter, page, perPage }: ListUsersQuery): Promise<{
     users: User[];
     totalElements: number;
   }> {
+    const where = and(notDeleted, whereOf(filter, filterFields));
+
     const [listed, [total]] = await Promise.all([
       this.db
         .select()
         .from(users)
-        .where(notDeleted)
+        .where(where)
         .orderBy(desc(users.createdAt), desc(users.id))
         .limit(perPage)
         .offset(page * perPage),
-      this.db.select({ value: count() }).from(users).where(notDeleted),
+      this.db.select({ value: count() }).from(users).where(where),
     ]);
 
     return { users: listed, totalElements: total!.value };

@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { pageSchema } from './pagination.js';
+import { filterQuerySchema } from './filtering.js';
+import { pageQuerySchema, pageSchema } from './pagination.js';
 
 /** What a user sees about their own account. */
 export const ownUserSchema = z.object({
@@ -30,6 +31,13 @@ export const bocUserSchema = z.object({
 });
 
 export type BocUser = z.infer<typeof bocUserSchema>;
+
+/** Lists users page by page, optionally narrowed by a filter. */
+export const listUsersQuerySchema = pageQuerySchema.extend(
+  filterQuerySchema.shape,
+);
+
+export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>;
 
 export const bocUserPageSchema = pageSchema(bocUserSchema);
 
