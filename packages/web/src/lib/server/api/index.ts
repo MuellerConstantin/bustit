@@ -5,3 +5,4 @@ export {
   listInvites,
   revokeInvite,
 } from './invites';
+export { listUsers } from './users';
