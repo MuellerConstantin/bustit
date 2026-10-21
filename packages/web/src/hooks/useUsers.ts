@@ -1,9 +1,23 @@
 import type { BocUserPage } from '@bustit/shared';
-import useSWRInfinite from 'swr/infinite';
+import { useSWRConfig } from 'swr';
+import useSWRInfinite, { unstable_serialize } from 'swr/infinite';
 import { fetcher } from '@/lib/client/bff';
 
 const PATH = '/boc/users';
 const PER_PAGE = 20;
+
+function pageKey(pageIndex: number, previous: BocUserPage | null) {
+  if (previous && previous.info.page + 1 >= previous.info.totalPages) {
+    return null;
+  }
+
+  const params = new URLSearchParams({
+    page: String(pageIndex),
+    perPage: String(PER_PAGE),
+  });
+
+  return `${PATH}?${params}`;
+}
 
 /**
  * The users, newest first, loaded page by page for the operations console.
@@ -12,18 +26,7 @@ const PER_PAGE = 20;
  */
 export function useUsers() {
   const { data, error, isLoading, size, setSize, mutate } =
-    useSWRInfinite<BocUserPage>((pageIndex, previous: BocUserPage | null) => {
-      if (previous && previous.info.page + 1 >= previous.info.totalPages) {
-        return null;
-      }
-
-      const params = new URLSearchParams({
-        page: String(pageIndex),
-        perPage: String(PER_PAGE),
-      });
-
-      return `${PATH}?${params}`;
-    }, fetcher);
+    useSWRInfinite<BocUserPage>(pageKey, fetcher);
 
   const users = data
     ? [
@@ -46,4 +49,15 @@ export function useUsers() {
     error: error as unknown,
     reload: () => mutate(),
   };
+}
+
+/** Reloads every user list, e.g. after deleting a user. */
+export function useReloadUsers() {
+  const { mutate } = useSWRConfig();
+
+  /*
+   * A filter passed to the global mutate skips the keys of `useSWRInfinite`,
+   * so the list is addressed by the key it is cached under instead.
+   */
+  return () => mutate(unstable_serialize(pageKey));
 }

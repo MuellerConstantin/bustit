@@ -4,9 +4,15 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/atoms/Button';
 import { UserListItem } from '@/components/molecules/boc/UserListItem';
 import { UserListSkeleton } from '@/components/molecules/boc/UserListSkeleton';
+import { DeleteUser } from '@/components/organisms/boc/DeleteUser';
 import { useUsers } from '@/hooks/useUsers';
 
-export function UserList() {
+interface UserListProps {
+  /** The logged-in admin, who can't delete themselves. */
+  currentUserId: string;
+}
+
+export function UserList({ currentUserId }: UserListProps) {
   const t = useTranslations('components.userList');
   const {
     users,
@@ -45,7 +51,13 @@ export function UserList() {
             className="divide-y divide-border rounded-xl border border-border"
           >
             {users.map((user) => (
-              <UserListItem key={user.id} user={user} />
+              <UserListItem
+                key={user.id}
+                user={user}
+                actions={
+                  user.id !== currentUserId && <DeleteUser user={user} />
+                }
+              />
             ))}
           </ul>
           <div className="flex flex-col items-center gap-2">

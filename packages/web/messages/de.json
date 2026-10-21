@@ -192,6 +192,16 @@
       "createdAt": "Registriert am {date}",
       "disabledAt": "Gesperrt am {date}",
       "balance": "{balance, number} Chips"
+    },
+    "deleteUser": {
+      "actions": "Aktionen für „{username}“",
+      "delete": "Löschen",
+      "confirmTitle": "Benutzer löschen?",
+      "confirmText": "„{username}“ wird gelöscht und kann sich nicht mehr anmelden. Das lässt sich nicht rückgängig machen.",
+      "errors": {
+        "self": "Du kannst dich nicht selbst löschen.",
+        "failed": "Der Benutzer konnte nicht gelöscht werden. Versuch es noch mal."
+      }
     }
   },
   "validation": {

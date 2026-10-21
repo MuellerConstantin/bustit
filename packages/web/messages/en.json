@@ -192,6 +192,16 @@
       "createdAt": "Registered on {date}",
       "disabledAt": "Disabled on {date}",
       "balance": "{balance, number} chips"
+    },
+    "deleteUser": {
+      "actions": "Actions for “{username}”",
+      "delete": "Delete",
+      "confirmTitle": "Delete user?",
+      "confirmText": "“{username}” will be deleted and can no longer log in. This can’t be undone.",
+      "errors": {
+        "self": "You can't delete yourself.",
+        "failed": "The user couldn't be deleted. Try again."
+      }
     }
   },
   "validation": {

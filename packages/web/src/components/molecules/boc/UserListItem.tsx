@@ -5,9 +5,11 @@ import { Badge } from '@/components/atoms/Badge';
 
 interface UserListItemProps {
   user: BocUser;
+  /** What can be done with the user, shown at the end of the row. */
+  actions?: React.ReactNode;
 }
 
-export function UserListItem({ user }: UserListItemProps) {
+export function UserListItem({ user, actions }: UserListItemProps) {
   const t = useTranslations('components.userListItem');
   const format = useFormatter();
 
@@ -53,6 +55,7 @@ export function UserListItem({ user }: UserListItemProps) {
       <span className="shrink-0 text-sm tabular-nums">
         {t('balance', { balance: user.balance })}
       </span>
+      {actions && <div className="shrink-0">{actions}</div>}
     </li>
   );
 }

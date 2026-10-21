@@ -5,4 +5,4 @@ export {
   listInvites,
   revokeInvite,
 } from './invites';
-export { listUsers } from './users';
+export { type DeleteUserOutcome, deleteUser, listUsers } from './users';
