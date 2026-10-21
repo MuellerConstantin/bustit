@@ -1,3 +1,4 @@
+import { MAX_PAGE_SIZE } from '@bustit/shared';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
@@ -56,6 +57,11 @@ describe('InvitesService', () => {
     });
 
     return player;
+  }
+
+  /** The newest invites, enough to include those a test just created. */
+  async function listNewest() {
+    return (await service.list({ page: 0, perPage: MAX_PAGE_SIZE })).invites;
   }
 
   function claim(code: string) {
@@ -141,9 +147,7 @@ describe('InvitesService', () => {
       await expire(expired.invite.id);
 
       const ids = [open, used, revoked, expired].map(({ invite }) => invite.id);
-      const listed = (await service.list()).filter(({ id }) =>
-        ids.includes(id),
-      );
+      const listed = (await listNewest()).filter(({ id }) => ids.includes(id));
 
       expect(listed.map(({ id, status }) => ({ id, status }))).toEqual([
         { id: expired.invite.id, status: 'expired' },
@@ -158,7 +162,7 @@ describe('InvitesService', () => {
       const used = await service.create(adminId, TEST_INVITE_TITLE);
       const player = await useUp(used.code);
 
-      const listed = await service.list();
+      const listed = await listNewest();
 
       expect(listed.find(({ id }) => id === open.invite.id)).toMatchObject({
         createdBy: adminId,
@@ -172,12 +176,50 @@ describe('InvitesService', () => {
       });
     });
 
+    it('returns one page and the total count', async () => {
+      const before = (await service.list({ page: 0, perPage: 1 }))
+        .totalElements;
+      const oldest = await service.create(adminId, TEST_INVITE_TITLE);
+      const middle = await service.create(adminId, TEST_INVITE_TITLE);
+      const newest = await service.create(adminId, TEST_INVITE_TITLE);
+
+      const first = await service.list({ page: 0, perPage: 2 });
+      const second = await service.list({ page: 1, perPage: 2 });
+
+      expect(first.totalElements).toBe(before + 3);
+      expect(first.invites.map(({ id }) => id)).toEqual([
+        newest.invite.id,
+        middle.invite.id,
+      ]);
+      expect(second.invites[0]?.id).toBe(oldest.invite.id);
+    });
+
+    it('filters by status, the total count included', async () => {
+      const open = await service.create(adminId, TEST_INVITE_TITLE);
+      const revoked = await service.create(adminId, TEST_INVITE_TITLE);
+      await service.revoke(revoked.invite.id);
+
+      const result = await service.list({
+        status: 'revoked',
+        page: 0,
+        perPage: MAX_PAGE_SIZE,
+      });
+      const ids = result.invites.map(({ id }) => id);
+
+      expect(ids).toContain(revoked.invite.id);
+      expect(ids).not.toContain(open.invite.id);
+      expect(result.invites.every(({ status }) => status === 'revoked')).toBe(
+        true,
+      );
+      expect(result.totalElements).toBe(result.invites.length);
+    });
+
     it('keeps a used invite used once it expires', async () => {
       const { invite, code } = await service.create(adminId, TEST_INVITE_TITLE);
       await useUp(code);
       await expire(invite.id);
 
-      const listed = (await service.list()).find(({ id }) => id === invite.id);
+      const listed = (await listNewest()).find(({ id }) => id === invite.id);
 
       expect(listed?.status).toBe('used');
     });

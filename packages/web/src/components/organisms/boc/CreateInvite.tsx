@@ -3,13 +3,12 @@
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useSWRConfig } from 'swr';
 import { Button } from '@/components/atoms/Button';
 import { Dialog, DialogHeading } from '@/components/atoms/Dialog';
 import { Modal } from '@/components/atoms/Modal';
 import { InviteCode } from '@/components/molecules/boc/InviteCode';
 import { CreateInviteForm } from '@/components/organisms/boc/CreateInviteForm';
-import { INVITES_KEY } from '@/hooks/useInvites';
+import { useReloadInvites } from '@/hooks/useInvites';
 
 /**
  * Creates an invite in a dialog: first its title, then its code. Once the
@@ -18,7 +17,7 @@ import { INVITES_KEY } from '@/hooks/useInvites';
  */
 export function CreateInvite() {
   const t = useTranslations('components.createInvite');
-  const { mutate } = useSWRConfig();
+  const reloadInvites = useReloadInvites();
   const [isOpen, setOpen] = useState(false);
   const [code, setCode] = useState<string | null>(null);
 
@@ -29,7 +28,7 @@ export function CreateInvite() {
 
   const showCode = (created: string) => {
     setCode(created);
-    void mutate(INVITES_KEY);
+    void reloadInvites();
   };
 
   return (

@@ -11,12 +11,17 @@ import { useInvites } from '@/hooks/useInvites';
 
 export function InviteList() {
   const t = useTranslations('components.inviteList');
-  const { data: invites, error, isLoading, mutate } = useInvites();
   const [onlyOpen, setOnlyOpen] = useState(true);
-
-  const visibleInvites = onlyOpen
-    ? invites?.filter((invite) => invite.status === 'open')
-    : invites;
+  const {
+    invites,
+    totalElements,
+    hasMore,
+    isLoading,
+    isLoadingMore,
+    loadMore,
+    error,
+    reload,
+  } = useInvites({ status: onlyOpen ? 'open' : undefined });
 
   return (
     <div className="flex flex-col gap-4">
@@ -36,36 +41,55 @@ export function InviteList() {
       )}
 
       {/* A failed refresh keeps the invites loaded before; SWR retries it. */}
-      {error && !invites && (
+      {Boolean(error) && !invites && (
         <div role="alert" className="flex flex-col items-start gap-3">
           <p className="text-sm text-destructive">{t('error')}</p>
-          <Button variant="secondary" onPress={() => void mutate()}>
+          <Button variant="secondary" onPress={() => void reload()}>
             {t('retry')}
           </Button>
         </div>
       )}
 
-      {visibleInvites?.length === 0 && (
+      {invites?.length === 0 && (
         <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
           {onlyOpen ? t('emptyOpen') : t('empty')}
         </p>
       )}
 
-      {visibleInvites && visibleInvites.length > 0 && (
-        <ul
-          aria-label={t('label')}
-          className="divide-y divide-border rounded-xl border border-border"
-        >
-          {visibleInvites.map((invite) => (
-            <InviteListItem
-              key={invite.id}
-              invite={invite}
-              actions={
-                invite.status === 'open' && <RevokeInvite invite={invite} />
-              }
-            />
-          ))}
-        </ul>
+      {invites && invites.length > 0 && (
+        <>
+          <ul
+            aria-label={t('label')}
+            className="divide-y divide-border rounded-xl border border-border"
+          >
+            {invites.map((invite) => (
+              <InviteListItem
+                key={invite.id}
+                invite={invite}
+                actions={
+                  invite.status === 'open' && <RevokeInvite invite={invite} />
+                }
+              />
+            ))}
+          </ul>
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-xs text-muted-foreground">
+              {t('shown', {
+                shown: invites.length,
+                total: totalElements ?? invites.length,
+              })}
+            </p>
+            {hasMore && (
+              <Button
+                variant="secondary"
+                onPress={() => void loadMore()}
+                isPending={isLoadingMore}
+              >
+                {t('loadMore')}
+              </Button>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

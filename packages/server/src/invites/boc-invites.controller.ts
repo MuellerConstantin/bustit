@@ -8,18 +8,22 @@ import {
   NotFoundException,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
 import {
   type CreateInviteRequest,
   type CreatedInvite as CreatedInviteResponse,
-  type Invite as InviteResponse,
+  type InvitePage,
+  type ListInvitesQuery,
   createInviteRequestSchema,
+  listInvitesQuerySchema,
 } from '@bustit/shared';
 import { z } from 'zod';
 // Imported from the files rather than the auth module's index, which imports
 // this module in turn.
 import { type AuthenticatedUser, CurrentUser } from '../auth/current-user.js';
 import { Roles } from '../auth/roles.js';
+import { pageOf } from '../infrastructure/pagination/index.js';
 import { ZodValidationPipe } from '../infrastructure/validation/index.js';
 import {
   toCreatedInviteResponse,
@@ -49,9 +53,12 @@ export class BocInvitesController {
   }
 
   @Get()
-  async list(): Promise<InviteResponse[]> {
-    const invites = await this.invitesService.list();
-    return invites.map(toInviteResponse);
+  async list(
+    @Query(new ZodValidationPipe(listInvitesQuerySchema))
+    query: ListInvitesQuery,
+  ): Promise<InvitePage> {
+    const { invites, totalElements } = await this.invitesService.list(query);
+    return pageOf(invites.map(toInviteResponse), totalElements, query);
   }
 
   /** Revoking keeps the invite listed, so this isn't a DELETE. */

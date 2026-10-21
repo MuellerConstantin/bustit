@@ -4,18 +4,24 @@ import {
   type CreateInviteRequest,
   type CreatedInvite,
   createdInviteSchema,
-  type Invite,
-  inviteSchema,
+  type InvitePage,
+  type ListInvitesQuery,
+  invitePageSchema,
 } from '@bustit/shared';
 import { HttpStatusCode, isAxiosError } from 'axios';
-import { z } from 'zod';
 import { api, bearer } from './client';
 
-/** All invites, newest first. Only admins may list them. */
-export async function listInvites(accessToken: string): Promise<Invite[]> {
-  const { data } = await api.get<unknown>('/boc/invites', bearer(accessToken));
+/** One page of the invites, newest first. Only admins may list them. */
+export async function listInvites(
+  accessToken: string,
+  query: ListInvitesQuery,
+): Promise<InvitePage> {
+  const { data } = await api.get<unknown>('/boc/invites', {
+    ...bearer(accessToken),
+    params: query,
+  });
 
-  return z.array(inviteSchema).parse(data);
+  return invitePageSchema.parse(data);
 }
 
 /** Creates an invite. The response is the only time its code is available. */

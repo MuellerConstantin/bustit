@@ -120,7 +120,9 @@
       "error": "Die Einladungen konnten nicht geladen werden.",
       "retry": "Erneut versuchen",
       "empty": "Noch keine Einladungen.",
-      "emptyOpen": "Keine offenen Einladungen."
+      "emptyOpen": "Keine offenen Einladungen.",
+      "shown": "{shown} von {total} angezeigt",
+      "loadMore": "Mehr laden"
     },
     "inviteListItem": {
       "status": {

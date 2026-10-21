@@ -194,6 +194,11 @@ folders themselves for that.
 - **Domain errors become HTTP errors in the controller**: The controller that
   calls a service maps its expected domain errors to a status, e.g. invalid
   input to 400 and a conflict to 409.
+- **Lists are paged by offset**: List endpoints take `page` (from 0) and
+  `perPage` with the page query schema from `@bustit/shared`, filters as
+  further query parameters, and answer with `{ content, info }`, whose info
+  has the page, its size and the totals. Filters apply to the totals as well,
+  so a client can number its pages.
 - **Request bodies are validated with the shared schemas**: Controllers parse
   input with the Zod validation pipe and the schemas from `@bustit/shared`,
   which the web client uses as well.

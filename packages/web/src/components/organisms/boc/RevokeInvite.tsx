@@ -4,14 +4,13 @@ import type { Invite } from '@bustit/shared';
 import { Ban, Ellipsis } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
-import { useSWRConfig } from 'swr';
 import { revokeInviteAction } from '@/actions/invites';
 import { Button } from '@/components/atoms/Button';
 import { Menu, MenuItem, MenuTrigger } from '@/components/atoms/Menu';
 import { Modal } from '@/components/atoms/Modal';
 import { Popover } from '@/components/atoms/Popover';
 import { ConfirmDialog } from '@/components/molecules/ConfirmDialog';
-import { INVITES_KEY } from '@/hooks/useInvites';
+import { useReloadInvites } from '@/hooks/useInvites';
 import { useRouter } from '@/i18n/navigation';
 
 type Failure = 'used' | 'failed';
@@ -24,7 +23,7 @@ interface RevokeInviteProps {
 export function RevokeInvite({ invite }: RevokeInviteProps) {
   const t = useTranslations('components.revokeInvite');
   const router = useRouter();
-  const { mutate } = useSWRConfig();
+  const reloadInvites = useReloadInvites();
   const [isConfirming, setConfirming] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -38,7 +37,7 @@ export function RevokeInvite({ invite }: RevokeInviteProps) {
      * actions, before the admin could read why revoking failed.
      */
     if (failure === 'used') {
-      void mutate(INVITES_KEY);
+      void reloadInvites();
     }
   };
 
@@ -66,7 +65,7 @@ export function RevokeInvite({ invite }: RevokeInviteProps) {
             return;
           case 'notFound':
             close();
-            void mutate(INVITES_KEY);
+            void reloadInvites();
             return;
           default:
             setFailure('failed');
@@ -75,7 +74,7 @@ export function RevokeInvite({ invite }: RevokeInviteProps) {
       }
 
       close();
-      void mutate(INVITES_KEY);
+      void reloadInvites();
     });
 
   return (

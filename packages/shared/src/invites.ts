@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { pageQuerySchema, pageSchema } from './pagination.js';
 import { userReferenceSchema } from './users.js';
 
 export const inviteStatusSchema = z.enum([
@@ -47,3 +48,14 @@ export const createdInviteSchema = z.object({
 });
 
 export type CreatedInvite = z.infer<typeof createdInviteSchema>;
+
+/** Lists invites page by page, optionally only those with one status. */
+export const listInvitesQuerySchema = pageQuerySchema.extend({
+  status: inviteStatusSchema.optional(),
+});
+
+export type ListInvitesQuery = z.infer<typeof listInvitesQuerySchema>;
+
+export const invitePageSchema = pageSchema(inviteSchema);
+
+export type InvitePage = z.infer<typeof invitePageSchema>;

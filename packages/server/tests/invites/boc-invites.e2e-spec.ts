@@ -1,4 +1,8 @@
-import { createdInviteSchema, inviteSchema } from '@bustit/shared';
+import {
+  MAX_PAGE_SIZE,
+  createdInviteSchema,
+  invitePageSchema,
+} from '@bustit/shared';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { RegistrationService } from '../../src/auth/index.js';
@@ -41,10 +45,16 @@ describe('/api/boc/invites (e2e)', () => {
       .send(body);
   }
 
-  function listInvites() {
+  function listInvites(query: object = {}) {
     return request(app.http)
       .get('/api/boc/invites')
+      .query({ perPage: MAX_PAGE_SIZE, ...query })
       .set('Authorization', asAdmin);
+  }
+
+  async function listedInvites(query?: object) {
+    const response = await listInvites(query).expect(200);
+    return invitePageSchema.parse(response.body);
   }
 
   function revoke(id: string) {
@@ -54,11 +64,8 @@ describe('/api/boc/invites (e2e)', () => {
   }
 
   async function statusOf(id: string): Promise<string | undefined> {
-    const response = await listInvites().expect(200);
-    return inviteSchema
-      .array()
-      .parse(response.body)
-      .find((invite) => invite.id === id)?.status;
+    const { content } = await listedInvites();
+    return content.find((invite) => invite.id === id)?.status;
   }
 
   describe('access', () => {
@@ -132,14 +139,54 @@ describe('/api/boc/invites (e2e)', () => {
       );
 
       const response = await listInvites().expect(200);
-      const ids = (response.body as { id: string }[]).map(({ id }) => id);
+      const { content } = invitePageSchema.parse(response.body);
+      const ids = content.map(({ id }) => id);
 
       expect(ids.indexOf(second.invite.id)).toBeLessThan(
         ids.indexOf(first.invite.id),
       );
       expect(JSON.stringify(response.body)).not.toContain(first.code);
       expect(JSON.stringify(response.body)).not.toMatch(/codeHash|code_hash/);
-      expect(() => inviteSchema.array().parse(response.body)).not.toThrow();
+    });
+
+    it('pages through the invites', async () => {
+      await createInvite().expect(201);
+      await createInvite().expect(201);
+      await createInvite().expect(201);
+
+      const all = await listedInvites();
+      const page = await listedInvites({ page: 1, perPage: 2 });
+
+      expect(page.info).toEqual({
+        page: 1,
+        perPage: 2,
+        totalElements: all.info.totalElements,
+        totalPages: Math.ceil(all.info.totalElements / 2),
+      });
+      expect(page.content.map(({ id }) => id)).toEqual(
+        all.content.slice(2, 4).map(({ id }) => id),
+      );
+    });
+
+    it('lists only the invites with the given status', async () => {
+      const { invite } = createdInviteSchema.parse(
+        (await createInvite().expect(201)).body,
+      );
+      await revoke(invite.id).expect(204);
+
+      const { content } = await listedInvites({ status: 'revoked' });
+
+      expect(content.map(({ id }) => id)).toContain(invite.id);
+      expect(content.every(({ status }) => status === 'revoked')).toBe(true);
+    });
+
+    it.each([
+      { page: -1 },
+      { perPage: 0 },
+      { perPage: MAX_PAGE_SIZE + 1 },
+      { status: 'unknown' },
+    ])('rejects the query %j', async (query) => {
+      await listInvites(query).expect(400);
     });
 
     it('names the user who used an invite', async () => {
@@ -153,11 +200,8 @@ describe('/api/boc/invites (e2e)', () => {
         password: TEST_PASSWORD,
       });
 
-      const response = await listInvites().expect(200);
-      const listed = inviteSchema
-        .array()
-        .parse(response.body)
-        .find(({ id }) => id === invite.id);
+      const { content } = await listedInvites();
+      const listed = content.find(({ id }) => id === invite.id);
 
       expect(listed).toMatchObject({
         createdBy: { id: adminId, username: adminUsername },

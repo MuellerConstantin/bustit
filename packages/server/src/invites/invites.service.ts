@@ -1,8 +1,17 @@
-import type { InviteStatus } from '@bustit/shared';
+import type { InviteStatus, ListInvitesQuery } from '@bustit/shared';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectDrizzle } from '@nestjs/drizzle';
-import { and, desc, eq, getTableColumns, gt, isNull, sql } from 'drizzle-orm';
+import {
+  and,
+  count,
+  desc,
+  eq,
+  getTableColumns,
+  gt,
+  isNull,
+  sql,
+} from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { Env } from '../infrastructure/config/index.js';
 import type {
@@ -71,22 +80,37 @@ export class InvitesService {
     return { invite: invite!, code };
   }
 
-  /** All invites, newest first. */
-  list(): Promise<ListedInvite[]> {
+  /**
+   * One page of the invites, newest first, and how many there are in all.
+   * Both are filtered by status if one is given.
+   */
+  async list({ status: wanted, page, perPage }: ListInvitesQuery): Promise<{
+    invites: ListedInvite[];
+    totalElements: number;
+  }> {
     const creator = alias(users, 'creator');
     const invitee = alias(users, 'invitee');
+    const where = wanted ? sql`${status} = ${wanted}` : undefined;
 
-    return this.db
-      .select({
-        ...getTableColumns(invites),
-        status,
-        createdByUsername: creator.username,
-        usedByUsername: invitee.username,
-      })
-      .from(invites)
-      .innerJoin(creator, eq(invites.createdBy, creator.id))
-      .leftJoin(invitee, eq(invites.usedBy, invitee.id))
-      .orderBy(desc(invites.createdAt), desc(invites.id));
+    const [listed, [total]] = await Promise.all([
+      this.db
+        .select({
+          ...getTableColumns(invites),
+          status,
+          createdByUsername: creator.username,
+          usedByUsername: invitee.username,
+        })
+        .from(invites)
+        .innerJoin(creator, eq(invites.createdBy, creator.id))
+        .leftJoin(invitee, eq(invites.usedBy, invitee.id))
+        .where(where)
+        .orderBy(desc(invites.createdAt), desc(invites.id))
+        .limit(perPage)
+        .offset(page * perPage),
+      this.db.select({ value: count() }).from(invites).where(where),
+    ]);
+
+    return { invites: listed, totalElements: total!.value };
   }
 
   /**
