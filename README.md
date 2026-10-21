@@ -72,10 +72,11 @@ Installs the dependencies of all packages.
 npm install
 ```
 
-Creates the local database and applies the migrations, which `npm run dev` doesn't do.
+Sets up the local services from `compose.dev.yaml`, such as the database, and applies the migrations,
+which `npm run dev` doesn't do.
 
 ```bash
-npm run db:reset
+npm run services:reset
 ```
 
 Starts the database from `compose.dev.yaml`, builds the shared libraries and runs the game server and
@@ -85,10 +86,17 @@ the web app with hot reload. The web app runs on http://localhost:3000.
 npm run dev
 ```
 
-The database keeps running afterwards and is stopped separately.
+The services keep running afterwards and are stopped separately.
 
 ```bash
 npm run services:stop
+```
+
+`services:reset` puts all local services back to their initial state: it removes them with their data,
+starts them fresh and applies the migrations again.
+
+```bash
+npm run services:reset
 ```
 
 ### Database
@@ -99,12 +107,12 @@ Schema changes go through a generated migration, which is committed and never ed
 npm run db:generate -w @bustit/server
 ```
 
-Migrations are applied before the server starts, never by the server itself. `db:reset` wipes the local
-database and applies them again.
+Migrations are applied before the server starts, never by the server itself. `services:reset` wipes the
+local database along with the other services and applies them again.
 
 ```bash
 npm run db:migrate -w @bustit/server
-npm run db:reset
+npm run services:reset
 ```
 
 ### Checks

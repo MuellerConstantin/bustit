@@ -128,8 +128,7 @@ folders themselves for that.
   the rules, which catches rules that are wrong yet consistent.
 - **Real Postgres in tests**: E2e tests run against a throwaway Postgres from
   Testcontainers instead of mocks, migrated with the committed migrations.
-  Local development uses the Postgres from `compose.dev.yaml`;
-  `npm run db:reset` wipes it and applies the migrations again.
+  Local development uses the Postgres from `compose.dev.yaml`.
 - **E2e test files run one after another on an emptied database**: They
   share one database, so they don't run in parallel. The test app helper
   empties all tables before starting the app, whose startup then creates the
@@ -175,7 +174,7 @@ folders themselves for that.
   separate step before the server starts, never by the server itself.
   Nothing runs in production yet, so for now schema changes don't get a
   migration of their own: the migrations are regenerated into a single
-  initial one (delete `drizzle/`, generate, `npm run db:reset`). Once the
+  initial one (delete `drizzle/`, generate, `npm run services:reset`). Once the
   first production deploy exists, every change gets a new migration.
 - **The ledger is the only way to change a balance**: A user's balance
   caches the sum of their ledger entries and is only changed by a ledger
@@ -375,7 +374,8 @@ folders themselves for that.
 - Local development and e2e tests need Docker. `npm run dev` starts the
   services from `compose.dev.yaml`, such as the database, and then the dev
   servers on the host. The services keep running afterwards;
-  `npm run services:stop` stops them.
+  `npm run services:stop` stops them. `npm run services:reset` removes all
+  of them with their data, starts them fresh and applies the migrations.
 - Run the checks listed in [CONTRIBUTING.md](CONTRIBUTING.md) before
   considering a task done.
 

@@ -25,7 +25,7 @@
     "dev": "npm run services:start && npm run build:libs && concurrently -n engine,shared,server,web -c gray,gray,blue,green \"npm run dev -w @bustit/engine\" \"npm run dev -w @bustit/shared\" \"npm run dev -w @bustit/server\" \"npm run dev -w @bustit/web\"",
     "services:start": "docker compose -f compose.dev.yaml up -d --wait",
     "services:stop": "docker compose -f compose.dev.yaml stop",
-    "db:reset": "docker compose -f compose.dev.yaml rm --force --stop postgres && docker volume rm --force bustit-dev_postgres && npm run services:start && npm run db:migrate -w @bustit/server",
+    "services:reset": "docker compose -f compose.dev.yaml down --volumes && npm run services:start && npm run db:migrate -w @bustit/server",
     "typecheck": "npm run build:libs && npm run typecheck --workspaces",
     "lint": "npm run build:libs && npm run lint --workspaces",
     "lint:fix": "npm run build:libs && npm run lint:fix --workspaces",
