@@ -25,7 +25,7 @@ export class AuthController {
   ) {}
 
   /**
-   * Every failure answers the same, whether the user is unknown, disabled or
+   * Every failure answers the same, whether the user is unknown, deleted, disabled or
    * the password is wrong, so the response doesn't reveal which usernames
    * exist.
    */

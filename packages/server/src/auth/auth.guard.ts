@@ -15,7 +15,7 @@ import { ROLES } from './roles.js';
 
 /**
  * Applies to every route unless it is marked `@Public()`. A token only counts
- * while its user exists, isn't disabled and still has the token version the
+ * while its user exists, isn't disabled or deleted and still has the token version the
  * token was issued with. Routes marked `@Roles()` also require one of the
  * roles. Both checks live in one guard, so the role is checked on the user
  * the token check just loaded.

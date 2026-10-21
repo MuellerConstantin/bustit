@@ -31,6 +31,11 @@ export const users = pgTable(
     tokenVersion: integer().notNull().default(0),
     disabledAt: timestamp({ withTimezone: true }),
     /**
+     * Deleted users keep their row, so their ledger entries and invites still
+     * name them. They can't log in and aren't listed.
+     */
+    deletedAt: timestamp({ withTimezone: true }),
+    /**
      * Cache of the sum of the user's ledger entries. Only the ledger changes
      * it, in the same transaction as the entry.
      */

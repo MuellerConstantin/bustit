@@ -34,6 +34,7 @@ CREATE TABLE "users" (
 	"role" "user_role" DEFAULT 'player' NOT NULL,
 	"token_version" integer DEFAULT 0 NOT NULL,
 	"disabled_at" timestamp with time zone,
+	"deleted_at" timestamp with time zone,
 	"balance" bigint DEFAULT 0 NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "users_username_unique" UNIQUE("username"),

@@ -1,13 +1,17 @@
 import type { PageQuery } from '@bustit/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectDrizzle } from '@nestjs/drizzle';
-import { count, desc, eq } from 'drizzle-orm';
+import { and, count, desc, eq, isNull, sql } from 'drizzle-orm';
 import {
   type Database,
   type Transaction,
   isUniqueViolation,
 } from '../infrastructure/database/index.js';
-import { UsernameTakenError } from './users.errors.js';
+import {
+  SelfDeletionError,
+  UserNotFoundError,
+  UsernameTakenError,
+} from './users.errors.js';
 import { type User, type UserRole, users } from './users.schema.js';
 
 export type NewUser = {
@@ -17,12 +21,18 @@ export type NewUser = {
   readonly role: UserRole;
 };
 
+const notDeleted = isNull(users.deletedAt);
+
+/** Deleted users are left out of every lookup and list. */
 @Injectable()
 export class UsersService {
   constructor(@InjectDrizzle() private readonly db: Database) {}
 
   async findById(id: string): Promise<User | null> {
-    const [user] = await this.db.select().from(users).where(eq(users.id, id));
+    const [user] = await this.db
+      .select()
+      .from(users)
+      .where(and(eq(users.id, id), notDeleted));
     return user ?? null;
   }
 
@@ -31,7 +41,7 @@ export class UsersService {
     const [user] = await this.db
       .select()
       .from(users)
-      .where(eq(users.username, username));
+      .where(and(eq(users.username, username), notDeleted));
     return user ?? null;
   }
 
@@ -44,10 +54,11 @@ export class UsersService {
       this.db
         .select()
         .from(users)
+        .where(notDeleted)
         .orderBy(desc(users.createdAt), desc(users.id))
         .limit(perPage)
         .offset(page * perPage),
-      this.db.select({ value: count() }).from(users),
+      this.db.select({ value: count() }).from(users).where(notDeleted),
     ]);
 
     return { users: listed, totalElements: total!.value };
@@ -57,9 +68,32 @@ export class UsersService {
     const [admin] = await (tx ?? this.db)
       .select({ id: users.id })
       .from(users)
-      .where(eq(users.role, 'admin'))
+      .where(and(eq(users.role, 'admin'), notDeleted))
       .limit(1);
     return admin !== undefined;
+  }
+
+  /**
+   * Marks a user deleted, which ends their logins. The row stays, so their
+   * ledger entries and invites keep pointing at it, and so does the username.
+   *
+   * @throws SelfDeletionError if `deletedBy` is the user.
+   * @throws UserNotFoundError if there is no such user or it is deleted.
+   */
+  async delete(id: string, deletedBy: string): Promise<void> {
+    if (id === deletedBy) {
+      throw new SelfDeletionError(id);
+    }
+
+    const [deleted] = await this.db
+      .update(users)
+      .set({ deletedAt: sql`now()` })
+      .where(and(eq(users.id, id), notDeleted))
+      .returning({ id: users.id });
+
+    if (!deleted) {
+      throw new UserNotFoundError(id);
+    }
   }
 
   /**

@@ -12,11 +12,15 @@ import { type TestApp, createTestApp } from '../utils/test-app.js';
 
 describe('/api/boc/users (e2e)', () => {
   let app: TestApp;
+  let adminId: string;
   let asAdmin: string;
 
   beforeAll(async () => {
     app = await createTestApp();
-    asAdmin = await authorizationFor(app, await getAdmin(app));
+
+    const admin = await getAdmin(app);
+    adminId = admin.id;
+    asAdmin = await authorizationFor(app, admin);
   });
 
   afterAll(async () => {
@@ -27,6 +31,12 @@ describe('/api/boc/users (e2e)', () => {
     return request(app.http)
       .get('/api/boc/users')
       .query({ perPage: MAX_PAGE_SIZE, ...query })
+      .set('Authorization', authorization);
+  }
+
+  function deleteUser(id: string, authorization = asAdmin) {
+    return request(app.http)
+      .delete(`/api/boc/users/${id}`)
       .set('Authorization', authorization);
   }
 
@@ -44,6 +54,7 @@ describe('/api/boc/users (e2e)', () => {
       const asPlayer = await authorizationFor(app, await createPlayer(app));
 
       await listUsers({}, asPlayer).expect(403);
+      await deleteUser(adminId, asPlayer).expect(403);
     });
   });
 
@@ -110,5 +121,37 @@ describe('/api/boc/users (e2e)', () => {
         await listUsers(query).expect(400);
       },
     );
+  });
+
+  describe('DELETE /api/boc/users/:id', () => {
+    it('deletes a user, who is no longer listed and can no longer log in', async () => {
+      const player = await createPlayer(app);
+      const asPlayer = await authorizationFor(app, player);
+
+      await deleteUser(player.id).expect(204);
+
+      const { content } = await listedUsers();
+      expect(content.map(({ id }) => id)).not.toContain(player.id);
+      await request(app.http)
+        .get('/api/me')
+        .set('Authorization', asPlayer)
+        .expect(401);
+    });
+
+    it('rejects deleting oneself', async () => {
+      await deleteUser(adminId).expect(409);
+    });
+
+    it('answers a deleted or unknown user with 404', async () => {
+      const player = await createPlayer(app);
+      await deleteUser(player.id).expect(204);
+
+      await deleteUser(player.id).expect(404);
+      await deleteUser('00000000-0000-7000-8000-000000000000').expect(404);
+    });
+
+    it('rejects an id that is no uuid', async () => {
+      await deleteUser('not-a-uuid').expect(400);
+    });
   });
 });

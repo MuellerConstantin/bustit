@@ -112,6 +112,24 @@ describe('Auth (e2e)', () => {
       expect(unknownUser.body).toEqual(wrongPassword.body);
     });
 
+    it('rejects a deleted user like a wrong password', async () => {
+      const player = await createPlayer(app);
+      await app.db
+        .update(users)
+        .set({ deletedAt: new Date() })
+        .where(eq(users.id, player.id));
+
+      const response = await login({
+        username: player.username,
+        password: TEST_PASSWORD,
+      });
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual(
+        (await login({ ...admin, password: 'nope' })).body,
+      );
+    });
+
     it('rejects a disabled user like a wrong password', async () => {
       const player = await createPlayer(app);
       await app.db
@@ -191,6 +209,16 @@ describe('Auth (e2e)', () => {
       await app.db
         .update(users)
         .set({ tokenVersion: player.tokenVersion + 1 })
+        .where(eq(users.id, player.id));
+
+      await getProtected(authorization).expect(401);
+    });
+
+    it('rejects the token once the user is deleted', async () => {
+      const { player, authorization } = await loggedInPlayer();
+      await app.db
+        .update(users)
+        .set({ deletedAt: new Date() })
         .where(eq(users.id, player.id));
 
       await getProtected(authorization).expect(401);
