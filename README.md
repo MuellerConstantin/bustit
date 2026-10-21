@@ -72,8 +72,8 @@ Installs the dependencies of all packages.
 npm install
 ```
 
-Sets up the local services from `compose.dev.yaml`, such as the database, and applies the migrations,
-which `npm run dev` doesn't do.
+Sets up the local services from `compose.dev.yaml`, such as the database, applies the migrations and
+seeds the database, which `npm run dev` doesn't do.
 
 ```bash
 npm run services:reset
@@ -93,11 +93,15 @@ npm run services:stop
 ```
 
 `services:reset` puts all local services back to their initial state: it removes them with their data,
-starts them fresh and applies the migrations again.
+starts them fresh, applies the migrations again and seeds the database.
 
 ```bash
 npm run services:reset
 ```
+
+The seed creates the admin from the environment, the players `alice`, `bob`, `carol`, `dave` and
+`erin` with the password `test-password`, and an invite in every status. It prints the code of the
+open invite.
 
 ### Database
 
@@ -108,7 +112,7 @@ npm run db:generate -w @bustit/server
 ```
 
 Migrations are applied before the server starts, never by the server itself. `services:reset` wipes the
-local database along with the other services and applies them again.
+local database along with the other services, applies them again and seeds it.
 
 ```bash
 npm run db:migrate -w @bustit/server

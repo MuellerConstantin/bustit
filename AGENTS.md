@@ -45,6 +45,7 @@ and the checks a change has to pass. This file doesn't repeat them.
 │   ├── server/         # @bustit/server: NestJS game server
 │   │   ├── src/        # One folder per feature, technical concerns in infrastructure/
 │   │   ├── drizzle/    # Generated migrations, committed
+│   │   ├── seed/       # Factories for tests and seed, the development seed
 │   │   └── tests/      # Unit and e2e tests mirroring src/, shared helpers in utils/
 │   └── web/            # @bustit/web: Next.js client, UI only
 │       ├── src/
@@ -134,11 +135,13 @@ folders themselves for that.
   empties all tables before starting the app, whose startup then creates the
   admin, so every file starts from the same state. Concurrency is tested
   deliberately inside single tests, not by running files at once.
-- **Test data comes from factories, not seeds**: Tests create their data with
-  the factories in `tests/utils/`, which go through the app's services, so
-  the data always satisfies the domain rules. Each test creates its own data
-  with unique names, so tests within a file don't depend on each other.
-  There are no SQL seeds or fixed data sets for tests.
+- **Data comes from factories, not SQL seeds**: Tests and the development
+  seed create their data with the factories in the server's `seed/` folder,
+  which go through the app's services, so the data always satisfies the
+  domain rules and follows every migration without maintenance. Each test
+  creates its own data with unique names, so tests within a file don't
+  depend on each other. Tests never use the seed or any fixed data set; the
+  seed only fills the development database.
 
 ### Server
 
@@ -375,7 +378,8 @@ folders themselves for that.
   services from `compose.dev.yaml`, such as the database, and then the dev
   servers on the host. The services keep running afterwards;
   `npm run services:stop` stops them. `npm run services:reset` removes all
-  of them with their data, starts them fresh and applies the migrations.
+  of them with their data, starts them fresh, applies the migrations and
+  seeds the database.
 - Run the checks listed in [CONTRIBUTING.md](CONTRIBUTING.md) before
   considering a task done.
 

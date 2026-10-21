@@ -3,11 +3,8 @@ import { eq, sql } from 'drizzle-orm';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { users } from '../../src/users/index.js';
-import {
-  authorizationFor,
-  createPlayer,
-  getAdmin,
-} from '../utils/factories.js';
+import { createPlayer, getAdmin } from '../../seed/factories.js';
+import { authorizationFor } from '../utils/auth.js';
 import { type TestApp, createTestApp } from '../utils/test-app.js';
 
 describe('/api/boc/users (e2e)', () => {

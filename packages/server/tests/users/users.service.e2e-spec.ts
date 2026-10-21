@@ -4,7 +4,7 @@ import {
   UserNotFoundError,
   UsersService,
 } from '../../src/users/index.js';
-import { createPlayer, getAdmin } from '../utils/factories.js';
+import { createPlayer, getAdmin } from '../../seed/factories.js';
 import { type TestApp, createTestApp } from '../utils/test-app.js';
 
 describe('UsersService', () => {

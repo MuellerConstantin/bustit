@@ -10,10 +10,10 @@ import {
   invites,
 } from '../../src/invites/index.js';
 import {
-  TEST_INVITE_TITLE,
+  DEFAULT_INVITE_TITLE,
   createPlayer,
   getAdmin,
-} from '../utils/factories.js';
+} from '../../seed/factories.js';
 import { type TestApp, createTestApp } from '../utils/test-app.js';
 
 describe('InvitesService', () => {
@@ -76,14 +76,17 @@ describe('InvitesService', () => {
     });
 
     it('stores only the hash of the code', async () => {
-      const { invite, code } = await service.create(adminId, TEST_INVITE_TITLE);
+      const { invite, code } = await service.create(
+        adminId,
+        DEFAULT_INVITE_TITLE,
+      );
 
       expect(invite.codeHash).toBe(hashInviteCode(code));
       expect(JSON.stringify(await inviteOf(code))).not.toContain(code);
     });
 
     it('expires after the configured days', async () => {
-      const { invite } = await service.create(adminId, TEST_INVITE_TITLE);
+      const { invite } = await service.create(adminId, DEFAULT_INVITE_TITLE);
       const days =
         (invite.expiresAt.getTime() - invite.createdAt.getTime()) /
         (24 * 60 * 60 * 1000);
@@ -99,7 +102,7 @@ describe('InvitesService', () => {
 
   describe('claim and markUsed', () => {
     it('use up an open invite', async () => {
-      const { code } = await service.create(adminId, TEST_INVITE_TITLE);
+      const { code } = await service.create(adminId, DEFAULT_INVITE_TITLE);
 
       const player = await useUp(code);
 
@@ -108,7 +111,10 @@ describe('InvitesService', () => {
     });
 
     it('accept the code as typed by a user', async () => {
-      const { invite, code } = await service.create(adminId, TEST_INVITE_TITLE);
+      const { invite, code } = await service.create(
+        adminId,
+        DEFAULT_INVITE_TITLE,
+      );
       const typed = code.replace(/^BJ-/, '').replaceAll('-', ' ').toLowerCase();
 
       await expect(claim(typed)).resolves.toEqual({ id: invite.id });
@@ -121,14 +127,17 @@ describe('InvitesService', () => {
     });
 
     it('reject a used code', async () => {
-      const { code } = await service.create(adminId, TEST_INVITE_TITLE);
+      const { code } = await service.create(adminId, DEFAULT_INVITE_TITLE);
       await useUp(code);
 
       await expect(claim(code)).rejects.toThrow(InvalidInviteError);
     });
 
     it('reject an expired code', async () => {
-      const { invite, code } = await service.create(adminId, TEST_INVITE_TITLE);
+      const { invite, code } = await service.create(
+        adminId,
+        DEFAULT_INVITE_TITLE,
+      );
       await expire(invite.id);
 
       await expect(claim(code)).rejects.toThrow(InvalidInviteError);
@@ -137,10 +146,10 @@ describe('InvitesService', () => {
 
   describe('list', () => {
     it('lists invites newest first with their status', async () => {
-      const open = await service.create(adminId, TEST_INVITE_TITLE);
-      const used = await service.create(adminId, TEST_INVITE_TITLE);
-      const revoked = await service.create(adminId, TEST_INVITE_TITLE);
-      const expired = await service.create(adminId, TEST_INVITE_TITLE);
+      const open = await service.create(adminId, DEFAULT_INVITE_TITLE);
+      const used = await service.create(adminId, DEFAULT_INVITE_TITLE);
+      const revoked = await service.create(adminId, DEFAULT_INVITE_TITLE);
+      const expired = await service.create(adminId, DEFAULT_INVITE_TITLE);
 
       await useUp(used.code);
       await service.revoke(revoked.invite.id);
@@ -158,8 +167,8 @@ describe('InvitesService', () => {
     });
 
     it('names the users who created and used an invite', async () => {
-      const open = await service.create(adminId, TEST_INVITE_TITLE);
-      const used = await service.create(adminId, TEST_INVITE_TITLE);
+      const open = await service.create(adminId, DEFAULT_INVITE_TITLE);
+      const used = await service.create(adminId, DEFAULT_INVITE_TITLE);
       const player = await useUp(used.code);
 
       const listed = await listNewest();
@@ -179,9 +188,9 @@ describe('InvitesService', () => {
     it('returns one page and the total count', async () => {
       const before = (await service.list({ page: 0, perPage: 1 }))
         .totalElements;
-      const oldest = await service.create(adminId, TEST_INVITE_TITLE);
-      const middle = await service.create(adminId, TEST_INVITE_TITLE);
-      const newest = await service.create(adminId, TEST_INVITE_TITLE);
+      const oldest = await service.create(adminId, DEFAULT_INVITE_TITLE);
+      const middle = await service.create(adminId, DEFAULT_INVITE_TITLE);
+      const newest = await service.create(adminId, DEFAULT_INVITE_TITLE);
 
       const first = await service.list({ page: 0, perPage: 2 });
       const second = await service.list({ page: 1, perPage: 2 });
@@ -195,8 +204,8 @@ describe('InvitesService', () => {
     });
 
     it('filters by status, the total count included', async () => {
-      const open = await service.create(adminId, TEST_INVITE_TITLE);
-      const revoked = await service.create(adminId, TEST_INVITE_TITLE);
+      const open = await service.create(adminId, DEFAULT_INVITE_TITLE);
+      const revoked = await service.create(adminId, DEFAULT_INVITE_TITLE);
       await service.revoke(revoked.invite.id);
 
       const result = await service.list({
@@ -215,7 +224,10 @@ describe('InvitesService', () => {
     });
 
     it('keeps a used invite used once it expires', async () => {
-      const { invite, code } = await service.create(adminId, TEST_INVITE_TITLE);
+      const { invite, code } = await service.create(
+        adminId,
+        DEFAULT_INVITE_TITLE,
+      );
       await useUp(code);
       await expire(invite.id);
 
@@ -227,7 +239,10 @@ describe('InvitesService', () => {
 
   describe('revoke', () => {
     it('makes the code unusable', async () => {
-      const { invite, code } = await service.create(adminId, TEST_INVITE_TITLE);
+      const { invite, code } = await service.create(
+        adminId,
+        DEFAULT_INVITE_TITLE,
+      );
 
       await service.revoke(invite.id);
 
@@ -236,7 +251,10 @@ describe('InvitesService', () => {
     });
 
     it('keeps the first revocation when revoked again', async () => {
-      const { invite, code } = await service.create(adminId, TEST_INVITE_TITLE);
+      const { invite, code } = await service.create(
+        adminId,
+        DEFAULT_INVITE_TITLE,
+      );
       await service.revoke(invite.id);
       const { revokedAt } = await inviteOf(code);
 
@@ -246,7 +264,10 @@ describe('InvitesService', () => {
     });
 
     it('rejects a used invite', async () => {
-      const { invite, code } = await service.create(adminId, TEST_INVITE_TITLE);
+      const { invite, code } = await service.create(
+        adminId,
+        DEFAULT_INVITE_TITLE,
+      );
       await useUp(code);
 
       await expect(service.revoke(invite.id)).rejects.toThrow(InviteUsedError);

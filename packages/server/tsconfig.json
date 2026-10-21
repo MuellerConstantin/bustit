@@ -11,6 +11,7 @@
   },
   "include": [
     "src",
+    "seed",
     "tests",
     "vitest.config.ts",
     "vitest.config.e2e.ts",

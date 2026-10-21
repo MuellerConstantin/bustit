@@ -12,7 +12,7 @@ import {
 } from '../../src/auth/index.js';
 import type { Env } from '../../src/infrastructure/config/index.js';
 import { users } from '../../src/users/index.js';
-import { TEST_PASSWORD, createPlayer } from '../utils/factories.js';
+import { DEFAULT_PASSWORD, createPlayer } from '../../seed/factories.js';
 import { type TestApp, createTestApp } from '../utils/test-app.js';
 
 /** Routes of the test's own to exercise the guard with. */
@@ -76,7 +76,7 @@ describe('Auth (e2e)', () => {
     const player = await createPlayer(app);
     const token = await accessTokenOf({
       username: player.username,
-      password: TEST_PASSWORD,
+      password: DEFAULT_PASSWORD,
     });
     return { player, authorization: `Bearer ${token}` };
   }
@@ -121,7 +121,7 @@ describe('Auth (e2e)', () => {
 
       const response = await login({
         username: player.username,
-        password: TEST_PASSWORD,
+        password: DEFAULT_PASSWORD,
       });
 
       expect(response.status).toBe(401);
@@ -139,7 +139,7 @@ describe('Auth (e2e)', () => {
 
       const response = await login({
         username: player.username,
-        password: TEST_PASSWORD,
+        password: DEFAULT_PASSWORD,
       });
 
       expect(response.status).toBe(401);

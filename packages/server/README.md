@@ -59,6 +59,13 @@ npm run db:generate -w @bustit/server
 npm run db:migrate -w @bustit/server
 ```
 
+Seeds an empty, migrated development database. `npm run services:reset` in the repository root runs it
+after the migrations.
+
+```bash
+npm run db:seed -w @bustit/server
+```
+
 Runs the unit tests, and the e2e tests against a throwaway Postgres in Docker.
 
 ```bash

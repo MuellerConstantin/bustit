@@ -7,13 +7,13 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { RegistrationService } from '../../src/auth/index.js';
 import {
-  TEST_INVITE_TITLE,
-  TEST_PASSWORD,
-  authorizationFor,
+  DEFAULT_INVITE_TITLE,
+  DEFAULT_PASSWORD,
   createPlayer,
   getAdmin,
   uniqueUsername,
-} from '../utils/factories.js';
+} from '../../seed/factories.js';
+import { authorizationFor } from '../utils/auth.js';
 import { type TestApp, createTestApp } from '../utils/test-app.js';
 
 describe('/api/boc/invites (e2e)', () => {
@@ -37,7 +37,7 @@ describe('/api/boc/invites (e2e)', () => {
 
   function createInvite(
     authorization = asAdmin,
-    body: object = { title: TEST_INVITE_TITLE },
+    body: object = { title: DEFAULT_INVITE_TITLE },
   ) {
     return request(app.http)
       .post('/api/boc/invites')
@@ -92,7 +92,7 @@ describe('/api/boc/invites (e2e)', () => {
 
       expect(code).toMatch(/^BJ-[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}$/);
       expect(invite).toMatchObject({
-        title: TEST_INVITE_TITLE,
+        title: DEFAULT_INVITE_TITLE,
         status: 'open',
         createdBy: { id: adminId, username: adminUsername },
         usedAt: null,
@@ -123,7 +123,7 @@ describe('/api/boc/invites (e2e)', () => {
         app.get(RegistrationService).register({
           inviteCode: code,
           username: uniqueUsername(),
-          password: TEST_PASSWORD,
+          password: DEFAULT_PASSWORD,
         }),
       ).resolves.toMatchObject({ role: 'player' });
     });
@@ -201,7 +201,7 @@ describe('/api/boc/invites (e2e)', () => {
       await app.get(RegistrationService).register({
         inviteCode: code,
         username,
-        password: TEST_PASSWORD,
+        password: DEFAULT_PASSWORD,
       });
 
       const { content } = await listedInvites();
@@ -241,7 +241,7 @@ describe('/api/boc/invites (e2e)', () => {
       await app.get(RegistrationService).register({
         inviteCode: code,
         username: uniqueUsername(),
-        password: TEST_PASSWORD,
+        password: DEFAULT_PASSWORD,
       });
 
       await revoke(invite.id).expect(409);

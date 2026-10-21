@@ -6,7 +6,7 @@ import {
   ledger,
 } from '../../src/ledger/index.js';
 import { users } from '../../src/users/index.js';
-import { createPlayer } from '../utils/factories.js';
+import { createPlayer } from '../../seed/factories.js';
 import { type TestApp, createTestApp } from '../utils/test-app.js';
 
 /** Every player starts with the starting balance booked as signup bonus. */

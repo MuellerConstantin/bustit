@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsc -p tsconfig.seed.json && cross-env NODE_ENV=development node dist/seed/seed/main.js",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "test": "vitest run",

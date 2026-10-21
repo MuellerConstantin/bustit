@@ -11,11 +11,11 @@ import {
 import { ledger } from '../../src/ledger/index.js';
 import { UsernameTakenError, users } from '../../src/users/index.js';
 import {
-  TEST_PASSWORD,
+  DEFAULT_PASSWORD,
   createInvite,
   createPlayer,
   uniqueUsername,
-} from '../utils/factories.js';
+} from '../../seed/factories.js';
 import { type TestApp, createTestApp } from '../utils/test-app.js';
 
 describe('RegistrationService', () => {
@@ -40,7 +40,11 @@ describe('RegistrationService', () => {
   }
 
   function register(inviteCode: string, username = uniqueUsername()) {
-    return service.register({ inviteCode, username, password: TEST_PASSWORD });
+    return service.register({
+      inviteCode,
+      username,
+      password: DEFAULT_PASSWORD,
+    });
   }
 
   it('creates a player with the starting balance and uses up the invite', async () => {

@@ -8,11 +8,11 @@ import {
   invites,
 } from '../../src/invites/index.js';
 import {
-  TEST_PASSWORD,
+  DEFAULT_PASSWORD,
   createInvite,
   createPlayer,
   uniqueUsername,
-} from '../utils/factories.js';
+} from '../../seed/factories.js';
 import { type TestApp, createTestApp } from '../utils/test-app.js';
 
 describe('POST /api/auth/register (e2e)', () => {
@@ -45,7 +45,7 @@ describe('POST /api/auth/register (e2e)', () => {
     const response = await register({
       inviteCode: code,
       username,
-      password: TEST_PASSWORD,
+      password: DEFAULT_PASSWORD,
     }).expect(201);
     const body = loginResponseSchema.parse(response.body);
 
@@ -69,7 +69,7 @@ describe('POST /api/auth/register (e2e)', () => {
     const response = await register({
       inviteCode: ` ${code.toLowerCase().replaceAll('-', ' ')} `,
       username: `  ${username.toUpperCase()} `,
-      password: TEST_PASSWORD,
+      password: DEFAULT_PASSWORD,
     }).expect(201);
 
     expect(response.body).toMatchObject({ user: { username } });
@@ -80,7 +80,7 @@ describe('POST /api/auth/register (e2e)', () => {
     await register({
       inviteCode: used.code,
       username: uniqueUsername(),
-      password: TEST_PASSWORD,
+      password: DEFAULT_PASSWORD,
     }).expect(201);
 
     const revoked = await createInvite(app);
@@ -98,7 +98,7 @@ describe('POST /api/auth/register (e2e)', () => {
           register({
             inviteCode,
             username: uniqueUsername(),
-            password: TEST_PASSWORD,
+            password: DEFAULT_PASSWORD,
           }),
       ),
     );
@@ -116,7 +116,7 @@ describe('POST /api/auth/register (e2e)', () => {
     await register({
       inviteCode: code,
       username: player.username,
-      password: TEST_PASSWORD,
+      password: DEFAULT_PASSWORD,
     }).expect(409);
 
     expect((await inviteOf(code)).usedAt).toBeNull();
@@ -132,7 +132,7 @@ describe('POST /api/auth/register (e2e)', () => {
     await register({
       inviteCode: code,
       username: uniqueUsername(),
-      password: TEST_PASSWORD,
+      password: DEFAULT_PASSWORD,
       ...override,
     }).expect(400);
 

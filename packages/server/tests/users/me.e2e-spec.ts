@@ -1,11 +1,8 @@
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { LedgerService } from '../../src/ledger/index.js';
-import {
-  authorizationFor,
-  createPlayer,
-  getAdmin,
-} from '../utils/factories.js';
+import { createPlayer, getAdmin } from '../../seed/factories.js';
+import { authorizationFor } from '../utils/auth.js';
 import { type TestApp, createTestApp } from '../utils/test-app.js';
 
 describe('GET /api/me (e2e)', () => {

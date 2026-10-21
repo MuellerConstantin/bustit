@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/seed",
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["src", "seed"]
+}

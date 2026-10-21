@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AccountService } from '../../src/auth/index.js';
 import { ledger } from '../../src/ledger/index.js';
 import { UsernameTakenError, users } from '../../src/users/index.js';
-import { TEST_PASSWORD, uniqueUsername } from '../utils/factories.js';
+import { DEFAULT_PASSWORD, uniqueUsername } from '../../seed/factories.js';
 import { type TestApp, createTestApp } from '../utils/test-app.js';
 
 describe('AccountService', () => {
@@ -33,7 +33,7 @@ describe('AccountService', () => {
 
     const user = await service.create({
       username,
-      password: TEST_PASSWORD,
+      password: DEFAULT_PASSWORD,
       role: 'player',
     });
 
@@ -43,16 +43,16 @@ describe('AccountService', () => {
       tokenVersion: 0,
       disabledAt: null,
     });
-    expect(user.passwordHash).not.toContain(TEST_PASSWORD);
-    await expect(argon2.verify(user.passwordHash, TEST_PASSWORD)).resolves.toBe(
-      true,
-    );
+    expect(user.passwordHash).not.toContain(DEFAULT_PASSWORD);
+    await expect(
+      argon2.verify(user.passwordHash, DEFAULT_PASSWORD),
+    ).resolves.toBe(true);
   });
 
   it('books the starting balance', async () => {
     const user = await service.create({
       username: uniqueUsername(),
-      password: TEST_PASSWORD,
+      password: DEFAULT_PASSWORD,
       role: 'player',
     });
 
@@ -68,7 +68,7 @@ describe('AccountService', () => {
   it('rejects a username that is taken', async () => {
     const account = {
       username: uniqueUsername(),
-      password: TEST_PASSWORD,
+      password: DEFAULT_PASSWORD,
       role: 'player',
     } as const;
 
@@ -81,7 +81,7 @@ describe('AccountService', () => {
     await expect(
       service.create({
         username: 'Not Normalized',
-        password: TEST_PASSWORD,
+        password: DEFAULT_PASSWORD,
         role: 'player',
       }),
     ).rejects.toThrow();
@@ -93,7 +93,7 @@ describe('AccountService', () => {
     await expect(
       app.db.transaction(async (tx) => {
         await service.create(
-          { username, password: TEST_PASSWORD, role: 'player' },
+          { username, password: DEFAULT_PASSWORD, role: 'player' },
           tx,
         );
         throw new Error('caller failed');
