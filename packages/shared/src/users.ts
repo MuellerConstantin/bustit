@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { pageSchema } from './pagination.js';
 
 /** What a user sees about their own account. */
 export const userProfileSchema = z.object({
@@ -17,3 +18,19 @@ export const userReferenceSchema = z.object({
 });
 
 export type UserReference = z.infer<typeof userReferenceSchema>;
+
+/** A user as the operations console lists them. */
+export const bocUserSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+  role: z.enum(['admin', 'player']),
+  balance: z.number().int(),
+  createdAt: z.iso.datetime(),
+  disabledAt: z.iso.datetime().nullable(),
+});
+
+export type BocUser = z.infer<typeof bocUserSchema>;
+
+export const bocUserPageSchema = pageSchema(bocUserSchema);
+
+export type BocUserPage = z.infer<typeof bocUserPageSchema>;

@@ -1,6 +1,7 @@
+import type { PageQuery } from '@bustit/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectDrizzle } from '@nestjs/drizzle';
-import { eq } from 'drizzle-orm';
+import { count, desc, eq } from 'drizzle-orm';
 import {
   type Database,
   type Transaction,
@@ -32,6 +33,24 @@ export class UsersService {
       .from(users)
       .where(eq(users.username, username));
     return user ?? null;
+  }
+
+  /** One page of the users, newest first, and how many there are in all. */
+  async list({ page, perPage }: PageQuery): Promise<{
+    users: User[];
+    totalElements: number;
+  }> {
+    const [listed, [total]] = await Promise.all([
+      this.db
+        .select()
+        .from(users)
+        .orderBy(desc(users.createdAt), desc(users.id))
+        .limit(perPage)
+        .offset(page * perPage),
+      this.db.select({ value: count() }).from(users),
+    ]);
+
+    return { users: listed, totalElements: total!.value };
   }
 
   async hasAdmin(tx?: Transaction): Promise<boolean> {
