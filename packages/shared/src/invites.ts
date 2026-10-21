@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { filterQuerySchema } from './filtering.js';
 import { pageQuerySchema, pageSchema } from './pagination.js';
 import { userReferenceSchema } from './users.js';
 
@@ -49,10 +50,10 @@ export const createdInviteSchema = z.object({
 
 export type CreatedInvite = z.infer<typeof createdInviteSchema>;
 
-/** Lists invites page by page, optionally only those with one status. */
-export const listInvitesQuerySchema = pageQuerySchema.extend({
-  status: inviteStatusSchema.optional(),
-});
+/** Lists invites page by page, optionally narrowed by a filter. */
+export const listInvitesQuerySchema = pageQuerySchema.extend(
+  filterQuerySchema.shape,
+);
 
 export type ListInvitesQuery = z.infer<typeof listInvitesQuerySchema>;
 

@@ -29,6 +29,8 @@
     "@nestjs/core": "12.2.0",
     "@nestjs/drizzle": "0.0.2",
     "@nestjs/platform-express": "12.2.0",
+    "@rsql/ast": "1.6.0",
+    "@rsql/parser": "1.6.0",
     "argon2": "0.45.1",
     "cross-env": "10.1.0",
     "drizzle-orm": "0.45.4",

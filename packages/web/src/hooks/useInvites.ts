@@ -26,7 +26,7 @@ export function useInvites({ status }: UseInvitesOptions = {}) {
       const params = new URLSearchParams({
         page: String(pageIndex),
         perPage: String(PER_PAGE),
-        ...(status && { status }),
+        ...(status && { filter: `status==${status}` }),
       });
 
       return `${PATH}?${params}`;

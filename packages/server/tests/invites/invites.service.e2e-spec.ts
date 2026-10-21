@@ -200,7 +200,7 @@ describe('InvitesService', () => {
       await service.revoke(revoked.invite.id);
 
       const result = await service.list({
-        status: 'revoked',
+        filter: 'status==revoked',
         page: 0,
         perPage: MAX_PAGE_SIZE,
       });

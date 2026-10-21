@@ -1,4 +1,8 @@
-import type { InviteStatus, ListInvitesQuery } from '@bustit/shared';
+import {
+  type InviteStatus,
+  type ListInvitesQuery,
+  inviteStatusSchema,
+} from '@bustit/shared';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectDrizzle } from '@nestjs/drizzle';
@@ -14,6 +18,10 @@ import {
 } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { Env } from '../infrastructure/config/index.js';
+import {
+  type FilterFields,
+  whereOf,
+} from '../infrastructure/filtering/index.js';
 import type {
   Database,
   Transaction,
@@ -51,6 +59,15 @@ const status = sql<InviteStatus>`case
   else 'open'
 end`;
 
+/** What the invites can be filtered on. */
+const filterFields = {
+  status: {
+    expression: status,
+    operators: ['==', '!=', '=in=', '=out='],
+    value: inviteStatusSchema,
+  },
+} satisfies FilterFields;
+
 @Injectable()
 export class InvitesService {
   private readonly validityDays: number;
@@ -82,15 +99,18 @@ export class InvitesService {
 
   /**
    * One page of the invites, newest first, and how many there are in all.
-   * Both are filtered by status if one is given.
+   * Both are narrowed by the filter if one is given.
+   *
+   * @throws InvalidFilterError if the filter isn't valid or asks for more
+   *   than `filterFields` allows.
    */
-  async list({ status: wanted, page, perPage }: ListInvitesQuery): Promise<{
+  async list({ filter, page, perPage }: ListInvitesQuery): Promise<{
     invites: ListedInvite[];
     totalElements: number;
   }> {
     const creator = alias(users, 'creator');
     const invitee = alias(users, 'invitee');
-    const where = wanted ? sql`${status} = ${wanted}` : undefined;
+    const where = whereOf(filter, filterFields);
 
     const [listed, [total]] = await Promise.all([
       this.db

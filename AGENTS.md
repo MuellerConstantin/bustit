@@ -195,10 +195,16 @@ folders themselves for that.
   calls a service maps its expected domain errors to a status, e.g. invalid
   input to 400 and a conflict to 409.
 - **Lists are paged by offset**: List endpoints take `page` (from 0) and
-  `perPage` with the page query schema from `@bustit/shared`, filters as
-  further query parameters, and answer with `{ content, info }`, whose info
-  has the page, its size and the totals. Filters apply to the totals as well,
-  so a client can number its pages.
+  `perPage` with the page query schema from `@bustit/shared` and answer
+  with `{ content, info }`, whose info has the page, its size and the
+  totals. Filters apply to the totals as well, so a client can number its
+  pages.
+- **Lists are filtered with RSQL**: A list takes an RSQL expression as
+  `filter`, e.g. `status=in=(open,used)`. Its service declares the fields
+  that can be filtered on, each with its SQL expression, its operators and a
+  Zod schema for its values, and turns the filter into a `where` condition
+  with the filtering helper in `src/infrastructure/`. Anything not declared
+  is rejected as a 400, so nothing becomes filterable by accident.
 - **Request bodies are validated with the shared schemas**: Controllers parse
   input with the Zod validation pipe and the schemas from `@bustit/shared`,
   which the web client uses as well.

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   ConflictException,
   Controller,
@@ -23,6 +24,7 @@ import { z } from 'zod';
 // this module in turn.
 import { type AuthenticatedUser, CurrentUser } from '../auth/current-user.js';
 import { Roles } from '../auth/roles.js';
+import { InvalidFilterError } from '../infrastructure/filtering/index.js';
 import { pageOf } from '../infrastructure/pagination/index.js';
 import { ZodValidationPipe } from '../infrastructure/validation/index.js';
 import {
@@ -57,8 +59,16 @@ export class InvitesBocController {
     @Query(new ZodValidationPipe(listInvitesQuerySchema))
     query: ListInvitesQuery,
   ): Promise<InvitePage> {
-    const { invites, totalElements } = await this.invitesService.list(query);
-    return pageOf(invites.map(toInviteResponse), totalElements, query);
+    try {
+      const { invites, totalElements } = await this.invitesService.list(query);
+      return pageOf(invites.map(toInviteResponse), totalElements, query);
+    } catch (error) {
+      if (error instanceof InvalidFilterError) {
+        throw new BadRequestException(error.message);
+      }
+
+      throw error;
+    }
   }
 
   /** Revoking keeps the invite listed, so this isn't a DELETE. */

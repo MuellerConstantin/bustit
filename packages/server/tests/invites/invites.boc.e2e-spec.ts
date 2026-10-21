@@ -174,7 +174,7 @@ describe('/api/boc/invites (e2e)', () => {
       );
       await revoke(invite.id).expect(204);
 
-      const { content } = await listedInvites({ status: 'revoked' });
+      const { content } = await listedInvites({ filter: 'status==revoked' });
 
       expect(content.map(({ id }) => id)).toContain(invite.id);
       expect(content.every(({ status }) => status === 'revoked')).toBe(true);
@@ -184,7 +184,11 @@ describe('/api/boc/invites (e2e)', () => {
       { page: -1 },
       { perPage: 0 },
       { perPage: MAX_PAGE_SIZE + 1 },
-      { status: 'unknown' },
+      { filter: '' },
+      { filter: 'status=' },
+      { filter: 'status==unknown' },
+      { filter: 'codeHash==abc' },
+      { filter: 'status=like=open' },
     ])('rejects the query %j', async (query) => {
       await listInvites(query).expect(400);
     });
