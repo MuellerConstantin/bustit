@@ -1,0 +1,19 @@
+import { listTablesQuerySchema } from '@bustit/shared';
+import { HttpStatusCode } from 'axios';
+import type { NextRequest } from 'next/server';
+import { listBocTables } from '@/lib/server/api';
+import { respondOnBehalf } from '@/lib/server/bff';
+
+export function GET(request: NextRequest) {
+  const query = listTablesQuerySchema.safeParse(
+    Object.fromEntries(request.nextUrl.searchParams),
+  );
+
+  if (!query.success) {
+    return new Response(null, { status: HttpStatusCode.BadRequest });
+  }
+
+  return respondOnBehalf((accessToken) =>
+    listBocTables(accessToken, query.data),
+  );
+}

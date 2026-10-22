@@ -1,11 +1,11 @@
 'use client';
 
-import { DoorOpen, type LucideIcon, Ticket, Users } from 'lucide-react';
+import { type LucideIcon, Spade, Ticket, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/components/atoms/Link';
 import { usePathname } from '@/i18n/navigation';
 
-type Entry = 'users' | 'invites' | 'rooms';
+type Entry = 'users' | 'invites' | 'tables';
 
 const SECTIONS: readonly {
   id: 'accounts' | 'gameplay';
@@ -20,7 +20,7 @@ const SECTIONS: readonly {
   },
   {
     id: 'gameplay',
-    entries: [{ id: 'rooms', href: '/boc/rooms', icon: DoorOpen }],
+    entries: [{ id: 'tables', href: '/boc/tables', icon: Spade }],
   },
 ];
 

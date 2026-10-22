@@ -46,3 +46,26 @@ export function textFieldProps<TValues>(
     errorMessage: error,
   };
 }
+
+/**
+ * Connects a `NumberField` to a Formik field, like `textFieldProps`. An empty
+ * field holds `NaN`, which the form's schema has to reject.
+ */
+export function numberFieldProps<TValues>(
+  formik: FormikProps<TValues>,
+  name: keyof TValues & string,
+) {
+  const error =
+    formik.touched[name] && typeof formik.errors[name] === 'string'
+      ? formik.errors[name]
+      : undefined;
+
+  return {
+    name,
+    value: Number(formik.values[name]),
+    onChange: (value: number) => void formik.setFieldValue(name, value),
+    onBlur: () => void formik.setFieldTouched(name, true),
+    isInvalid: error !== undefined,
+    errorMessage: error,
+  };
+}

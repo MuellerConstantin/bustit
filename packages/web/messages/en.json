@@ -39,11 +39,11 @@
         },
         "title": "Invites"
       },
-      "rooms": {
+      "tables": {
         "seo": {
-          "title": "Rooms"
+          "title": "Tables"
         },
-        "title": "Rooms"
+        "title": "Tables"
       }
     },
     "forbidden": {
@@ -118,7 +118,7 @@
       "entries": {
         "users": "Users",
         "invites": "Invites",
-        "rooms": "Rooms"
+        "tables": "Tables"
       }
     },
     "inviteList": {
@@ -217,6 +217,66 @@
       "errors": {
         "self": "You can't delete yourself.",
         "failed": "The user couldn't be deleted. Try again."
+      }
+    },
+    "tableList": {
+      "label": "Tables",
+      "onlyOpen": "Open only",
+      "loading": "Loading tables …",
+      "error": "The tables couldn't be loaded.",
+      "retry": "Try again",
+      "empty": "No tables yet.",
+      "emptyOpen": "No open tables.",
+      "shown": "{shown} of {total} shown",
+      "loadMore": "Load more",
+      "search": "Search tables",
+      "searchPlaceholder": "Name",
+      "clearSearch": "Clear search",
+      "noMatches": "No tables match “{search}”."
+    },
+    "tableListItem": {
+      "status": {
+        "open": "Open",
+        "closed": "Closed"
+      },
+      "seats": "{seats, plural, one {# seat} other {# seats}}",
+      "betRange": "{min, number} – {max, number}",
+      "betRangeLabel": "Bets from {min, number} to {max, number} Bucks",
+      "createdAt": "Created on {date}",
+      "closedAt": "Closed on {date}"
+    },
+    "createTable": {
+      "create": "Create table",
+      "formTitle": "New table"
+    },
+    "createTableForm": {
+      "name": "Name",
+      "nameDescription": "How the table shows up in the lobby.",
+      "namePlaceholder": "e.g. Back room",
+      "seats": "Seats",
+      "seatsDescription": "{min} to {max} players.",
+      "minBet": "Minimum bet",
+      "maxBet": "Maximum bet",
+      "submit": "Create",
+      "cancel": "Cancel",
+      "errors": {
+        "nameRequired": "Please enter a name.",
+        "nameTaken": "A table has this name already, closed ones included.",
+        "seatsRange": "Enter a whole number from 1 to 7.",
+        "betRequired": "Please enter a bet.",
+        "betWhole": "Whole Bucks only.",
+        "betTooLow": "At least 1 Buck.",
+        "maxBelowMin": "Can't be below the minimum bet.",
+        "failed": "The table couldn't be created. Try again."
+      }
+    },
+    "closeTable": {
+      "actions": "Actions for “{name}”",
+      "close": "Close",
+      "confirmTitle": "Close table?",
+      "confirmText": "“{name}” will be closed. Nobody can sit down at it anymore, which can't be undone.",
+      "errors": {
+        "failed": "The table couldn't be closed. Try again."
       }
     }
   },

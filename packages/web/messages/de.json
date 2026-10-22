@@ -39,11 +39,11 @@
         },
         "title": "Einladungen"
       },
-      "rooms": {
+      "tables": {
         "seo": {
-          "title": "Räume"
+          "title": "Tische"
         },
-        "title": "Räume"
+        "title": "Tische"
       }
     },
     "forbidden": {
@@ -118,7 +118,7 @@
       "entries": {
         "users": "Benutzer",
         "invites": "Einladungen",
-        "rooms": "Räume"
+        "tables": "Tische"
       }
     },
     "inviteList": {
@@ -217,6 +217,66 @@
       "errors": {
         "self": "Du kannst dich nicht selbst löschen.",
         "failed": "Der Benutzer konnte nicht gelöscht werden. Versuch es noch mal."
+      }
+    },
+    "tableList": {
+      "label": "Tische",
+      "onlyOpen": "Nur offene",
+      "loading": "Tische werden geladen …",
+      "error": "Die Tische konnten nicht geladen werden.",
+      "retry": "Erneut versuchen",
+      "empty": "Noch keine Tische.",
+      "emptyOpen": "Keine offenen Tische.",
+      "shown": "{shown} von {total} angezeigt",
+      "loadMore": "Mehr laden",
+      "search": "Tische suchen",
+      "searchPlaceholder": "Name",
+      "clearSearch": "Suche leeren",
+      "noMatches": "Keine Tische zu „{search}“."
+    },
+    "tableListItem": {
+      "status": {
+        "open": "Offen",
+        "closed": "Geschlossen"
+      },
+      "seats": "{seats, plural, one {# Platz} other {# Plätze}}",
+      "betRange": "{min, number} – {max, number}",
+      "betRangeLabel": "Einsatz {min, number} bis {max, number} Bucks",
+      "createdAt": "Erstellt am {date}",
+      "closedAt": "Geschlossen am {date}"
+    },
+    "createTable": {
+      "create": "Tisch anlegen",
+      "formTitle": "Neuer Tisch"
+    },
+    "createTableForm": {
+      "name": "Name",
+      "nameDescription": "So steht der Tisch in der Lobby.",
+      "namePlaceholder": "z.B. Hinterzimmer",
+      "seats": "Plätze",
+      "seatsDescription": "{min} bis {max} Spieler.",
+      "minBet": "Mindesteinsatz",
+      "maxBet": "Höchsteinsatz",
+      "submit": "Anlegen",
+      "cancel": "Abbrechen",
+      "errors": {
+        "nameRequired": "Bitte gib einen Namen ein.",
+        "nameTaken": "Diesen Namen hat schon ein Tisch, auch geschlossene zählen.",
+        "seatsRange": "Gib eine ganze Zahl von 1 bis 7 ein.",
+        "betRequired": "Bitte gib einen Einsatz ein.",
+        "betWhole": "Nur ganze Bucks.",
+        "betTooLow": "Mindestens 1 Buck.",
+        "maxBelowMin": "Darf nicht unter dem Mindesteinsatz liegen.",
+        "failed": "Der Tisch konnte nicht angelegt werden. Versuch es noch mal."
+      }
+    },
+    "closeTable": {
+      "actions": "Aktionen für „{name}“",
+      "close": "Schließen",
+      "confirmTitle": "Tisch schließen?",
+      "confirmText": "„{name}“ wird geschlossen. Niemand kann sich danach mehr setzen, das lässt sich nicht rückgängig machen.",
+      "errors": {
+        "failed": "Der Tisch konnte nicht geschlossen werden. Versuch es noch mal."
       }
     }
   },
