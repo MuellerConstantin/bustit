@@ -23,7 +23,7 @@ export function AuthTemplate({ backgroundSrc, children }: AuthTemplateProps) {
       <div className="absolute inset-0 xl:-right-120">
         <Image
           src={backgroundSrc}
-          alt=""
+          alt="Background"
           fill
           priority
           sizes="100vw"
