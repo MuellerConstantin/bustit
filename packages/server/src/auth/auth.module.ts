@@ -10,9 +10,10 @@ import { AuthController } from './auth.controller.js';
 import { AuthGuard } from './auth.guard.js';
 import { RegistrationController } from './registration.controller.js';
 import { RegistrationService } from './registration.service.js';
+import { AuthTicketsModule } from '../auth-tickets/auth-tickets.module.js';
 
 @Module({
-  imports: [UsersModule, LedgerModule, InvitesModule],
+  imports: [UsersModule, LedgerModule, InvitesModule, AuthTicketsModule],
   controllers: [AuthController, RegistrationController],
   providers: [
     AccountService,
