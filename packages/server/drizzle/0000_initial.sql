@@ -1,5 +1,14 @@
 CREATE TYPE "public"."ledger_reason" AS ENUM('signup_bonus', 'bet', 'backbet', 'payout', 'refund', 'daily_bonus', 'rebuy', 'admin_adjust');--> statement-breakpoint
 CREATE TYPE "public"."user_role" AS ENUM('admin', 'player');--> statement-breakpoint
+CREATE TABLE "auth_tickets" (
+	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
+	"token_hash" text NOT NULL,
+	"user_id" uuid NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "auth_tickets_token_hash_unique" UNIQUE("token_hash")
+);
+--> statement-breakpoint
 CREATE TABLE "invites" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"code_hash" text NOT NULL,
@@ -56,7 +65,9 @@ CREATE TABLE "users" (
 	CONSTRAINT "users_username_format" CHECK ("users"."username" ~ '^[a-z0-9_]{3,20}$')
 );
 --> statement-breakpoint
+ALTER TABLE "auth_tickets" ADD CONSTRAINT "auth_tickets_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "invites" ADD CONSTRAINT "invites_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "invites" ADD CONSTRAINT "invites_used_by_users_id_fk" FOREIGN KEY ("used_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "ledger" ADD CONSTRAINT "ledger_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "auth_tickets_expires_at_idx" ON "auth_tickets" USING btree ("expires_at");--> statement-breakpoint
 CREATE INDEX "ledger_user_id_created_at_index" ON "ledger" USING btree ("user_id","created_at");

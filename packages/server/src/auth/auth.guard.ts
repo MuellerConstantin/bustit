@@ -29,6 +29,15 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    /*
+     * Socket connections are checked by the realtime adapter during the
+     * handshake, before any gateway handles a message. There is no bearer
+     * header to read here.
+     */
+    if (context.getType() !== 'http') {
+      return true;
+    }
+
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [
       context.getHandler(),
       context.getClass(),

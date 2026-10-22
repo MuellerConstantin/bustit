@@ -6,6 +6,7 @@ import { validateEnv } from './infrastructure/config/index.js';
 import { DatabaseModule } from './infrastructure/database/index.js';
 import { HealthModule } from './infrastructure/health/index.js';
 import { LoggingModule } from './infrastructure/logging/index.js';
+import { RealtimeModule } from './infrastructure/realtime/index.js';
 import { InvitesModule } from './invites/index.js';
 import { TablesModule } from './tables/index.js';
 import { UsersModule } from './users/index.js';
@@ -32,6 +33,7 @@ import { AuthTicketsModule } from './auth-tickets/auth-tickets.module.js';
     AuthTicketsModule,
     InvitesModule,
     TablesModule,
+    RealtimeModule,
   ],
 })
 export class AppModule {}
