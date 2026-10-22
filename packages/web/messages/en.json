@@ -5,8 +5,9 @@
   "pages": {
     "home": {
       "seo": {
-        "title": "Home"
-      }
+        "title": "Lobby"
+      },
+      "title": "Lobby"
     },
     "login": {
       "seo": {
@@ -278,6 +279,21 @@
       "errors": {
         "failed": "The table couldn't be closed. Try again."
       }
+    },
+    "tableGrid": {
+      "label": "Open tables",
+      "loading": "Loading tables …",
+      "error": "The tables couldn't be loaded.",
+      "retry": "Try again",
+      "empty": "No table is open right now.",
+      "more": "{shown} of {total} tables shown"
+    },
+    "tableCard": {
+      "seatsLabel": "Seats",
+      "seats": "{seats, plural, one {# seat} other {# seats}}",
+      "betsLabel": "Bets",
+      "betRange": "{min, number} – {max, number}",
+      "betRangeLabel": "{min, number} to {max, number} Bucks"
     }
   },
   "validation": {

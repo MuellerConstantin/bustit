@@ -45,7 +45,7 @@ export function MainTemplate({ backgroundSrc, children }: MainTemplateProps) {
          * screen is wider than the image; below that they are the screen's
          * edges. The masks intersect, so sides and bottom fade out together.
          */
-        <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 mx-auto aspect-1671/941 max-w-[1671px] min-h-112 mask-b-from-45% mask-b-to-100% min-[1671px]:mask-x-from-75% min-[1671px]:mask-x-to-100%">
+        <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 mx-auto aspect-1671/941 min-h-112 max-w-[1671px] mask-b-from-45% mask-b-to-100% min-[1671px]:mask-x-from-75% min-[1671px]:mask-x-to-100%">
           <Image
             src={backgroundSrc}
             alt=""

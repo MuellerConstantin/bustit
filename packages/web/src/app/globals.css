@@ -28,6 +28,8 @@
   --destructive: #ef4444;
   --destructive-foreground: oklch(0.99 0 0);
   --border: oklch(1 0 0 / 0.12);
+  /* Stronger than the border, so frosted cards stand out from bright scenes. */
+  --card-border: oklch(1 0 0 / 0.18);
   --input: oklch(1 0 0 / 0.22);
   --ring: oklch(1 0 0 / 0.45);
 
@@ -56,6 +58,7 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
+  --color-card-border: var(--card-border);
   --color-input: var(--input);
   --color-ring: var(--ring);
 

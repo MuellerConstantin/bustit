@@ -11,5 +11,6 @@ export {
   closeTable,
   createTable,
   listBocTables,
+  listTables,
 } from './tables';
 export { type DeleteUserOutcome, deleteUser, listUsers } from './users';

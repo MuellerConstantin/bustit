@@ -5,11 +5,27 @@ import {
   type BocTablePage,
   type CreateTableRequest,
   type ListTablesQuery,
+  type PageQuery,
+  type TablePage,
   bocTablePageSchema,
   bocTableSchema,
+  tablePageSchema,
 } from '@bustit/shared';
 import { HttpStatusCode, isAxiosError } from 'axios';
 import { api, bearer } from './client';
+
+/** One page of the open tables, newest first, as players see them. */
+export async function listTables(
+  accessToken: string,
+  query: PageQuery,
+): Promise<TablePage> {
+  const { data } = await api.get<unknown>('/tables', {
+    ...bearer(accessToken),
+    params: query,
+  });
+
+  return tablePageSchema.parse(data);
+}
 
 /** One page of all tables, newest first. Only admins may list them. */
 export async function listBocTables(
