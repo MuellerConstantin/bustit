@@ -306,9 +306,13 @@
     },
     "tableView": {
       "loading": "Tisch wird geladen …",
-      "notFound": "Diesen Tisch gibt es nicht oder er ist geschlossen.",
       "error": "Der Tisch konnte nicht geladen werden.",
-      "retry": "Erneut versuchen"
+      "retry": "Erneut versuchen",
+      "seatsLabel": "Plätze",
+      "seats": "{seats, plural, one {# Platz} other {# Plätze}}",
+      "betsLabel": "Einsatz",
+      "betRange": "{min, number} – {max, number}",
+      "betRangeLabel": "{min, number} bis {max, number} Bucks"
     }
   },
   "validation": {

@@ -1,11 +1,14 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Skeleton } from '@/components/atoms/Skeleton';
 import { useTable } from '@/hooks/useTable';
+import { Armchair, LogOut } from 'lucide-react';
+import { Bill } from '../atoms/Bill';
+import { useRouter } from '@/i18n/navigation';
 
 function TableViewSkeleton() {
   const t = useTranslations('components.tableView');
@@ -32,6 +35,7 @@ export function TableView() {
 }
 
 function TableOfPath() {
+  const router = useRouter();
   const t = useTranslations('components.tableView');
   const { id } = useParams<{ id: string }>();
   const { table, isLoading, isNotFound, error, reload } = useTable(id);
@@ -41,7 +45,7 @@ function TableOfPath() {
   }
 
   if (isNotFound) {
-    return <p className="text-sm text-muted-foreground">{t('notFound')}</p>;
+    return notFound();
   }
 
   if (!table) {
@@ -56,8 +60,47 @@ function TableOfPath() {
   }
 
   return (
-    <h1 className="font-display text-4xl tracking-wide sm:text-5xl">
-      {table.name}
-    </h1>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <h1 className="line-clamp-2 font-display text-4xl tracking-wide sm:text-5xl">
+            {table.name}
+          </h1>
+          <Button variant="icon" onPress={() => router.push('/')}>
+            <LogOut />
+          </Button>
+        </div>
+        <hr />
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <div>
+                <Armchair className="h-4 w-4" aria-hidden />
+                <span className="sr-only">{t('seatsLabel')}</span>
+              </div>
+              <div>{t('seats', { seats: table.seats })}</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div>
+                <Bill />
+                <span className="sr-only">{t('betsLabel')}</span>
+              </div>
+              {/* The bill stands in for the currency's name, which only screen readers get */}
+              <div>
+                <span aria-hidden>
+                  {t('betRange', { min: table.minBet, max: table.maxBet })}
+                </span>
+                <span className="sr-only">
+                  {t('betRangeLabel', { min: table.minBet, max: table.maxBet })}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="h-[75vh] rounded-md bg-accent">
+        {/* Placeholder for the game area */}
+      </div>
+    </div>
   );
 }
