@@ -1,5 +1,4 @@
 export {
-  REALTIME_PATH,
   RealtimeAdapter,
   type RealtimeSocketData,
 } from './realtime.adapter.js';

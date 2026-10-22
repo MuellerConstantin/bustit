@@ -9,6 +9,7 @@ import { useTable } from '@/hooks/useTable';
 import { Armchair, LogOut } from 'lucide-react';
 import { Bill } from '../atoms/Bill';
 import { useRouter } from '@/i18n/navigation';
+import { GameView } from './GameView';
 
 function TableViewSkeleton() {
   const t = useTranslations('components.tableView');
@@ -98,9 +99,7 @@ function TableOfPath() {
           </div>
         </div>
       </div>
-      <div className="h-[75vh] rounded-md bg-accent">
-        {/* Placeholder for the game area */}
-      </div>
+      <GameView />
     </div>
   );
 }

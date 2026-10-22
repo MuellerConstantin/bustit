@@ -4,8 +4,9 @@ import {
   WebSocketGateway,
 } from '@nestjs/websockets';
 import type { Socket } from 'socket.io';
+import { REALTIME_PATH } from '@bustit/shared';
 import type { AuthenticatedUser } from '../../auth/index.js';
-import { type RealtimeSocketData, REALTIME_PATH } from './realtime.adapter.js';
+import type { RealtimeSocketData } from './realtime.adapter.js';
 
 export type InfoResponse = {
   readonly serverTime: string;

@@ -1,4 +1,5 @@
 export { type RegisterOutcome, login, register } from './auth';
+export { issueAuthTicket } from './auth-tickets';
 export {
   type RevokeOutcome,
   createInvite,

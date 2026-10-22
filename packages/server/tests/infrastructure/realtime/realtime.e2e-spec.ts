@@ -3,10 +3,8 @@ import type { Server } from 'node:http';
 import { io, type Socket } from 'socket.io-client';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { AuthTicketsService } from '../../../src/auth-tickets/index.js';
-import {
-  type InfoResponse,
-  REALTIME_PATH,
-} from '../../../src/infrastructure/realtime/index.js';
+import { REALTIME_PATH } from '@bustit/shared';
+import type { InfoResponse } from '../../../src/infrastructure/realtime/index.js';
 import { createPlayer } from '../../../seed/factories.js';
 import { type TestApp, createTestApp } from '../../utils/test-app.js';
 

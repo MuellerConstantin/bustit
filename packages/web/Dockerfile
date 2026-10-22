@@ -10,6 +10,9 @@ RUN npm ci --workspace @bustit/web --include-workspace-root
 COPY packages/shared ./packages/shared
 COPY packages/web ./packages/web
 
+# Next.js builds this into the client bundle, so it has to be passed at build time.
+ARG NEXT_PUBLIC_GAME_SERVER_URL
+
 ENV NEXT_OUTPUT_MODE=standalone \
     NEXT_TELEMETRY_DISABLED=1
 

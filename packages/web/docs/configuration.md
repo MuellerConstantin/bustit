@@ -26,11 +26,20 @@ such as the order in which environment files are loaded.
 
 Changing these variables requires a rebuild of the web app.
 
-| Environment Variable | Description                                                                                                 | Required |
-| -------------------- | ----------------------------------------------------------------------------------------------------------- | -------- |
-| NEXT_OUTPUT_MODE     | Set to `standalone` to build a self-contained server for a container image. Unset, a regular build is made. | No       |
+| Environment Variable        | Description                                                                                                                                                                                                                                                           | Required |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| NEXT_OUTPUT_MODE            | Set to `standalone` to build a self-contained server for a container image. Unset, a regular build is made.                                                                                                                                                          | No       |
+| NEXT_PUBLIC_GAME_SERVER_URL | URL the browser connects to the game server's live connection at, without the `/api` prefix (e.g. `http://<HOST>:8080`). Browsers connect to it directly, so it must be reachable from them. It is public and holds no secret, and it is built into the app. | Yes      |
 
-There are no `NEXT_PUBLIC_` variables. Anything with that prefix would be readable by every browser.
+`NEXT_PUBLIC_GAME_SERVER_URL` is the only `NEXT_PUBLIC_` variable. Next.js builds the value into the
+JavaScript sent to the browser, so every browser can read it. That is intended for the game server's
+address, but it must never hold a secret. A change needs a rebuild of the web app.
+
+When the web app is built as a container image, pass the variable as a build argument:
+
+```bash
+docker build --build-arg NEXT_PUBLIC_GAME_SERVER_URL=http://<HOST>:8080 -f packages/web/Dockerfile .
+```
 
 ### Runtime configuration
 

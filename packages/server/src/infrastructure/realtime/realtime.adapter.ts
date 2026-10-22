@@ -8,9 +8,6 @@ import type { AuthenticatedUser } from '../../auth/index.js';
 import { AuthTicketsService } from '../../auth-tickets/index.js';
 import { UsersService } from '../../users/index.js';
 
-/** Served next to the HTTP API, which sits under the `api` prefix. */
-export const REALTIME_PATH = '/api/realtime';
-
 /** What the connection check leaves on every authenticated socket. */
 export type RealtimeSocketData = {
   readonly user: AuthenticatedUser;
