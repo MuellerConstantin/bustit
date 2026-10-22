@@ -1,5 +1,5 @@
 {
-  "id": "ecd8b069-0711-4b0d-a48f-835087f88588",
+  "id": "d24190dd-97ca-4d5b-87b9-8516a92d1a04",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -216,6 +216,84 @@
         "ledger_delta_not_zero": {
           "name": "ledger_delta_not_zero",
           "value": "\"ledger\".\"delta\" <> 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.tables": {
+      "name": "tables",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuidv7()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "seats": {
+          "name": "seats",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "min_bet": {
+          "name": "min_bet",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "max_bet": {
+          "name": "max_bet",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "closed_at": {
+          "name": "closed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "tables_name_unique": {
+          "name": "tables_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "tables_name_length": {
+          "name": "tables_name_length",
+          "value": "char_length(\"tables\".\"name\") between 1 and 50"
+        },
+        "tables_seats_range": {
+          "name": "tables_seats_range",
+          "value": "\"tables\".\"seats\" between 1 and 7"
+        },
+        "tables_bet_range": {
+          "name": "tables_bet_range",
+          "value": "\"tables\".\"min_bet\" >= 1 and \"tables\".\"max_bet\" >= \"tables\".\"min_bet\""
         }
       },
       "isRLSEnabled": false

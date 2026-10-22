@@ -1,9 +1,11 @@
 import { randomBytes } from 'node:crypto';
+import type { CreateTableRequest } from '@bustit/shared';
 import type { Type } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { AccountService } from '../src/auth/index.js';
 import type { Database } from '../src/infrastructure/database/index.js';
 import { type CreatedInvite, InvitesService } from '../src/invites/index.js';
+import { type Table, TablesService } from '../src/tables/index.js';
 import { type User, users } from '../src/users/index.js';
 
 /*
@@ -63,4 +65,23 @@ export async function createInvite(
 ): Promise<CreatedInvite> {
   const admin = await getAdmin(app);
   return app.get(InvitesService).create(admin.id, title);
+}
+
+/** Unique across all tests, as table names are unique. */
+export function uniqueTableName(): string {
+  return `Table ${randomBytes(6).toString('hex')}`;
+}
+
+/** An open table with a unique name, unless overridden. */
+export function createTable(
+  app: AppContext,
+  table: Partial<CreateTableRequest> = {},
+): Promise<Table> {
+  return app.get(TablesService).create({
+    name: uniqueTableName(),
+    seats: 5,
+    minBet: 10,
+    maxBet: 500,
+    ...table,
+  });
 }

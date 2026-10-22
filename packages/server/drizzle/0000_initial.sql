@@ -27,6 +27,20 @@ CREATE TABLE "ledger" (
 	CONSTRAINT "ledger_delta_not_zero" CHECK ("ledger"."delta" <> 0)
 );
 --> statement-breakpoint
+CREATE TABLE "tables" (
+	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
+	"name" text NOT NULL,
+	"seats" integer NOT NULL,
+	"min_bet" bigint NOT NULL,
+	"max_bet" bigint NOT NULL,
+	"closed_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "tables_name_unique" UNIQUE("name"),
+	CONSTRAINT "tables_name_length" CHECK (char_length("tables"."name") between 1 and 50),
+	CONSTRAINT "tables_seats_range" CHECK ("tables"."seats" between 1 and 7),
+	CONSTRAINT "tables_bet_range" CHECK ("tables"."min_bet" >= 1 and "tables"."max_bet" >= "tables"."min_bet")
+);
+--> statement-breakpoint
 CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"username" text NOT NULL,

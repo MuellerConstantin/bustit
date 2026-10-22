@@ -6,6 +6,7 @@ import { DatabaseModule } from './infrastructure/database/index.js';
 import { HealthModule } from './infrastructure/health/index.js';
 import { LoggingModule } from './infrastructure/logging/index.js';
 import { InvitesModule } from './invites/index.js';
+import { TablesModule } from './tables/index.js';
 import { UsersModule } from './users/index.js';
 
 @Module({
@@ -26,6 +27,7 @@ import { UsersModule } from './users/index.js';
     AuthModule,
     UsersModule,
     InvitesModule,
+    TablesModule,
   ],
 })
 export class AppModule {}

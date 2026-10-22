@@ -6,11 +6,13 @@ import { AppModule } from '../src/app.module.js';
 import { RegistrationService } from '../src/auth/index.js';
 import type { Database } from '../src/infrastructure/database/index.js';
 import { InvitesService, invites } from '../src/invites/index.js';
+import { TablesService } from '../src/tables/index.js';
 import {
   type AppContext,
   DEFAULT_PASSWORD,
   createInvite,
   createPlayer,
+  createTable,
 } from './factories.js';
 
 const PLAYERS = ['alice', 'bob', 'carol', 'dave'];
@@ -42,6 +44,16 @@ async function seed(app: AppContext, logger: Logger): Promise<void> {
     .where(eq(invites.id, expired.invite.id));
 
   const open = await createInvite(app, 'Open invite');
+
+  await createTable(app, { name: 'Low Stakes', minBet: 5, maxBet: 100 });
+  await createTable(app, {
+    name: 'High Rollers',
+    seats: 3,
+    minBet: 100,
+    maxBet: 5000,
+  });
+  const closed = await createTable(app, { name: 'Closed Table' });
+  await app.get(TablesService).close(closed.id);
 
   logger.log(
     `Players ${[...PLAYERS, 'erin'].join(', ')} log in with "${DEFAULT_PASSWORD}"`,
