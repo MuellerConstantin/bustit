@@ -160,6 +160,21 @@ describe('TablesService', () => {
     });
   });
 
+  describe('findOpen', () => {
+    it('finds an open table', async () => {
+      const table = await createTable(app);
+
+      await expect(service.findOpen(table.id)).resolves.toEqual(table);
+    });
+
+    it('leaves out a closed table', async () => {
+      const table = await createTable(app);
+      await service.close(table.id);
+
+      await expect(service.findOpen(table.id)).resolves.toBeNull();
+    });
+  });
+
   describe('close', () => {
     it('closes an open table', async () => {
       const table = await createTable(app);

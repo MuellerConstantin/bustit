@@ -1,4 +1,4 @@
-import { MAX_PAGE_SIZE, tablePageSchema } from '@bustit/shared';
+import { MAX_PAGE_SIZE, tablePageSchema, tableSchema } from '@bustit/shared';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { TablesService } from '../../src/tables/index.js';
@@ -109,5 +109,52 @@ describe('/api/tables (e2e)', () => {
     { filter: 'name=' },
   ])('rejects the query %j', async (query) => {
     await listTables(query).expect(400);
+  });
+
+  describe('GET /api/tables/:id', () => {
+    function getTable(id: string) {
+      return request(app.http)
+        .get(`/api/tables/${id}`)
+        .set('Authorization', asPlayer);
+    }
+
+    it('requires a login', async () => {
+      const table = await createTable(app);
+
+      await request(app.http).get(`/api/tables/${table.id}`).expect(401);
+    });
+
+    it('returns an open table', async () => {
+      const table = await createTable(app, {
+        seats: 3,
+        minBet: 5,
+        maxBet: 50,
+      });
+
+      const response = await getTable(table.id).expect(200);
+
+      expect(tableSchema.parse(response.body)).toEqual({
+        id: table.id,
+        name: table.name,
+        seats: 3,
+        minBet: 5,
+        maxBet: 50,
+      });
+    });
+
+    it('answers a closed table with 404', async () => {
+      const table = await createTable(app);
+      await app.get(TablesService).close(table.id);
+
+      await getTable(table.id).expect(404);
+    });
+
+    it('answers an unknown table with 404', async () => {
+      await getTable('00000000-0000-7000-8000-000000000000').expect(404);
+    });
+
+    it('rejects an id that is no uuid', async () => {
+      await getTable('not-a-uuid').expect(400);
+    });
   });
 });

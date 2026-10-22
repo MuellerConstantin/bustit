@@ -9,6 +9,11 @@
       },
       "title": "Lobby"
     },
+    "tables": {
+      "seo": {
+        "title": "Table"
+      }
+    },
     "login": {
       "seo": {
         "title": "Sign in"
@@ -298,6 +303,12 @@
       "betsLabel": "Bets",
       "betRange": "{min, number} – {max, number}",
       "betRangeLabel": "{min, number} to {max, number} Bucks"
+    },
+    "tableView": {
+      "loading": "Loading table …",
+      "notFound": "This table doesn't exist or is closed.",
+      "error": "The table couldn't be loaded.",
+      "retry": "Try again"
     }
   },
   "validation": {

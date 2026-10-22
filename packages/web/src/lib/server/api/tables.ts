@@ -5,10 +5,12 @@ import {
   type BocTablePage,
   type CreateTableRequest,
   type ListTablesQuery,
+  type Table,
   type TablePage,
   bocTablePageSchema,
   bocTableSchema,
   tablePageSchema,
+  tableSchema,
 } from '@bustit/shared';
 import { HttpStatusCode, isAxiosError } from 'axios';
 import { api, bearer } from './client';
@@ -24,6 +26,29 @@ export async function listTables(
   });
 
   return tablePageSchema.parse(data);
+}
+
+/** An open table as players see it, or null if it is unknown or closed. */
+export async function getTable(
+  accessToken: string,
+  id: string,
+): Promise<Table | null> {
+  try {
+    const { data } = await api.get<unknown>(
+      `/tables/${encodeURIComponent(id)}`,
+      bearer(accessToken),
+    );
+
+    return tableSchema.parse(data);
+  } catch (error) {
+    const status = isAxiosError(error) ? error.response?.status : undefined;
+
+    if (status === HttpStatusCode.NotFound) {
+      return null;
+    }
+
+    throw error;
+  }
 }
 
 /** One page of all tables, newest first. Only admins may list them. */

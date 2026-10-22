@@ -1,9 +1,18 @@
-import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Query,
+} from '@nestjs/common';
 import {
   type ListTablesQuery,
+  type Table,
   type TablePage,
   listTablesQuerySchema,
 } from '@bustit/shared';
+import { z } from 'zod';
 import { InvalidFilterError } from '../infrastructure/filtering/index.js';
 import { pageOf } from '../infrastructure/pagination/index.js';
 import { ZodValidationPipe } from '../infrastructure/validation/index.js';
@@ -32,5 +41,19 @@ export class TablesController {
 
       throw error;
     }
+  }
+
+  /** Closed tables are answered like unknown ones. */
+  @Get(':id')
+  async get(
+    @Param('id', new ZodValidationPipe(z.uuid())) id: string,
+  ): Promise<Table> {
+    const table = await this.tablesService.findOpen(id);
+
+    if (!table) {
+      throw new NotFoundException('No such table');
+    }
+
+    return toTableResponse(table);
   }
 }

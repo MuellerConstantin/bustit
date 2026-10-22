@@ -10,6 +10,7 @@ export {
   type CreateTableOutcome,
   closeTable,
   createTable,
+  getTable,
   listBocTables,
   listTables,
 } from './tables';

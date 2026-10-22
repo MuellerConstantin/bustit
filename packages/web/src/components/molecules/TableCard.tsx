@@ -2,6 +2,7 @@ import type { Table } from '@bustit/shared';
 import { Armchair } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Bill } from '@/components/atoms/Bill';
+import { Link } from '@/components/atoms/Link';
 
 interface TableCardProps {
   table: Table;
@@ -12,9 +13,18 @@ export function TableCard({ table }: TableCardProps) {
   const t = useTranslations('components.tableCard');
 
   return (
-    <article className="flex h-full flex-col gap-4 rounded-2xl border border-card-border bg-card p-5 shadow-2xl backdrop-blur-xl">
+    <article className="relative flex h-full flex-col gap-4 rounded-2xl border border-card-border bg-card p-5 shadow-2xl backdrop-blur-xl hover:border-primary">
       <h3 className="line-clamp-2 font-display text-2xl tracking-wide text-card-foreground">
-        {table.name}
+        {/*
+         * The link's pseudo-element covers the whole card, so the card is
+         * clickable while only the name is read out as the link.
+         */}
+        <Link
+          href={`/tables/${table.id}`}
+          className="text-card-foreground no-underline after:absolute after:inset-0 after:rounded-2xl"
+        >
+          {table.name}
+        </Link>
       </h3>
       <dl className="mt-auto flex flex-col gap-2 text-sm text-muted-foreground">
         <div className="flex items-center gap-2">

@@ -105,6 +105,15 @@ export class TablesService {
     return { tables: listed, totalElements: total!.value };
   }
 
+  /** The open table with the id, or null if there is none or it is closed. */
+  async findOpen(id: string): Promise<Table | null> {
+    const [table] = await this.db
+      .select()
+      .from(tables)
+      .where(and(eq(tables.id, id), isNull(tables.closedAt)));
+    return table ?? null;
+  }
+
   /**
    * Closes a table for good. Closing it again keeps the first closing.
    *
