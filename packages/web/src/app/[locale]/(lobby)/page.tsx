@@ -14,13 +14,12 @@ export default async function HomePage() {
 
   return (
     <LobbyTemplate>
-      <div className="flex flex-col gap-8">
-        <section className="flex flex-col justify-end pb-2">
-          <h1 className="font-display tracking-wide text-white sm:text-5xl">
+      <div className="flex flex-col gap-6">
+        <section className="flex flex-col justify-end">
+          <h1 className="font-display text-4xl tracking-wide text-white sm:text-5xl">
             {t('title')}
           </h1>
         </section>
-
         <section>
           <TableGrid />
         </section>

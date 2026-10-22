@@ -13,7 +13,11 @@ export async function Navbar() {
   return (
     <header className="border-b border-border bg-card backdrop-blur-xl">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Link href="/" aria-label={t('home')} className="no-underline">
+        <Link
+          href="/"
+          aria-label={t('home')}
+          className="flex items-center gap-2 no-underline"
+        >
           <Image
             src="/images/logo.svg"
             alt="Logo"
@@ -22,6 +26,7 @@ export async function Navbar() {
             priority
             className="size-10"
           />
+          <div className="font-display text-2xl text-white">BustIt</div>
         </Link>
         <div className="flex items-center gap-2">
           <I18nLocaleToggle />
