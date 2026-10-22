@@ -3,8 +3,9 @@ import {
   type ListInvitesQuery,
   inviteStatusSchema,
 } from '@bustit/shared';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectDrizzle } from '@nestjs/drizzle';
 import {
   and,
@@ -14,6 +15,8 @@ import {
   getTableColumns,
   gt,
   isNull,
+  lt,
+  or,
   sql,
 } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
@@ -93,6 +96,7 @@ const filterFields = {
 
 @Injectable()
 export class InvitesService {
+  private readonly logger = new Logger(InvitesService.name);
   private readonly validityDays: number;
 
   constructor(
@@ -231,5 +235,59 @@ export class InvitesService {
       .update(invites)
       .set({ usedAt: sql`now()`, usedBy })
       .where(eq(invites.id, inviteId));
+  }
+
+  async deleteNeedlessInvites(tx: Transaction): Promise<void> {
+    await tx
+      .delete(invites)
+      .where(
+        or(
+          and(
+            sql`${invites.usedAt} IS NOT NULL`,
+            lt(invites.usedAt, sql`now() - interval '90 days'`),
+          ),
+          and(
+            sql`${invites.revokedAt} IS NOT NULL`,
+            lt(invites.revokedAt, sql`now() - interval '30 days'`),
+          ),
+          and(
+            isNull(invites.usedAt),
+            isNull(invites.revokedAt),
+            lt(invites.expiresAt, sql`now() - interval '30 days'`),
+          ),
+        ),
+      );
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_3AM, {
+    timeZone: 'Europe/Berlin',
+  })
+  async handleCleanupCron(): Promise<void> {
+    try {
+      await this.db.transaction(async (tx) => {
+        const result = await tx.execute<{ acquired: boolean }>(sql`
+          SELECT pg_try_advisory_xact_lock(
+            hashtext('invite-cleanup')
+          ) AS acquired
+        `);
+
+        if (!result.rows[0]?.acquired) {
+          this.logger.debug(
+            'Invite cleanup skipped: another instance holds the lock',
+          );
+          return;
+        }
+
+        await this.deleteNeedlessInvites(tx);
+
+        this.logger.log('Invite cleanup completed');
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error('Invite cleanup failed', error.stack);
+      } else {
+        this.logger.error(`Invite cleanup failed: ${String(error)}`);
+      }
+    }
   }
 }
