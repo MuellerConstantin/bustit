@@ -46,7 +46,8 @@ export function TableList() {
         </Switch>
       </div>
 
-      {isLoading && (
+      {/* A new search keeps showing the tables found before until it loads. */}
+      {isLoading && !tables && (
         <div aria-busy>
           <span className="sr-only">{t('loading')}</span>
           <TableListSkeleton />
@@ -63,7 +64,8 @@ export function TableList() {
         </div>
       )}
 
-      {tables?.length === 0 && (
+      {/* Waits for the current search, so it never names one that is still loading. */}
+      {!isLoading && tables?.length === 0 && (
         <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
           {debouncedSearch
             ? t('noMatches', { search: debouncedSearch })

@@ -41,7 +41,8 @@ export function UserList({ currentUserId }: UserListProps) {
         className="w-full sm:w-80"
       />
 
-      {isLoading && (
+      {/* A new search keeps showing the users found before until it loads. */}
+      {isLoading && !users && (
         <div aria-busy>
           <span className="sr-only">{t('loading')}</span>
           <UserListSkeleton />
@@ -59,7 +60,8 @@ export function UserList({ currentUserId }: UserListProps) {
       )}
 
       {/* Without a search the list has at least the admin who views it. */}
-      {users?.length === 0 && (
+      {/* Waits for the current search, so it never names one that is still loading. */}
+      {!isLoading && users?.length === 0 && (
         <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
           {t('noMatches', { search: debouncedSearch })}
         </p>

@@ -286,7 +286,11 @@
       "error": "The tables couldn't be loaded.",
       "retry": "Try again",
       "empty": "No table is open right now.",
-      "more": "{shown} of {total} tables shown"
+      "more": "{shown} of {total} tables shown",
+      "search": "Search tables",
+      "searchPlaceholder": "Table name",
+      "clearSearch": "Clear search",
+      "noMatches": "No open table matches “{search}”."
     },
     "tableCard": {
       "seatsLabel": "Seats",

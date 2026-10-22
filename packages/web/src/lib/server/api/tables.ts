@@ -5,7 +5,6 @@ import {
   type BocTablePage,
   type CreateTableRequest,
   type ListTablesQuery,
-  type PageQuery,
   type TablePage,
   bocTablePageSchema,
   bocTableSchema,
@@ -17,7 +16,7 @@ import { api, bearer } from './client';
 /** One page of the open tables, newest first, as players see them. */
 export async function listTables(
   accessToken: string,
-  query: PageQuery,
+  query: ListTablesQuery,
 ): Promise<TablePage> {
   const { data } = await api.get<unknown>('/tables', {
     ...bearer(accessToken),

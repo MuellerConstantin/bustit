@@ -6,7 +6,15 @@ import {
 } from '@bustit/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectDrizzle } from '@nestjs/drizzle';
-import { count, desc, eq, getTableColumns, sql } from 'drizzle-orm';
+import {
+  and,
+  count,
+  desc,
+  eq,
+  getTableColumns,
+  isNull,
+  sql,
+} from 'drizzle-orm';
 import { z } from 'zod';
 import {
   type FilterFields,
@@ -65,16 +73,23 @@ export class TablesService {
 
   /**
    * One page of the tables, newest first, and how many there are in all.
-   * Both are narrowed by the filter if one is given.
+   * Both are narrowed by the filter if one is given, and to the open tables
+   * if `openOnly` is set, whatever the filter asks for.
    *
    * @throws InvalidFilterError if the filter isn't valid or asks for more
    *   than `filterFields` allows.
    */
-  async list({ filter, page, perPage }: ListTablesQuery): Promise<{
+  async list(
+    { filter, page, perPage }: ListTablesQuery,
+    { openOnly = false }: { openOnly?: boolean } = {},
+  ): Promise<{
     tables: ListedTable[];
     totalElements: number;
   }> {
-    const where = whereOf(filter, filterFields);
+    const where = and(
+      openOnly ? isNull(tables.closedAt) : undefined,
+      whereOf(filter, filterFields),
+    );
 
     const [listed, [total]] = await Promise.all([
       this.db

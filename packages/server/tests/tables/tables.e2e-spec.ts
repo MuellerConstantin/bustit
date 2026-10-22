@@ -2,7 +2,11 @@ import { MAX_PAGE_SIZE, tablePageSchema } from '@bustit/shared';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { TablesService } from '../../src/tables/index.js';
-import { createPlayer, createTable } from '../../seed/factories.js';
+import {
+  createPlayer,
+  createTable,
+  uniqueTableName,
+} from '../../seed/factories.js';
 import { authorizationFor } from '../utils/auth.js';
 import { type TestApp, createTestApp } from '../utils/test-app.js';
 
@@ -81,10 +85,29 @@ describe('/api/tables (e2e)', () => {
     );
   });
 
-  it.each([{ page: -1 }, { perPage: 0 }, { perPage: MAX_PAGE_SIZE + 1 }])(
-    'rejects the query %j',
-    async (query) => {
-      await listTables(query).expect(400);
-    },
-  );
+  it('searches the names of the open tables', async () => {
+    const name = uniqueTableName();
+    const open = await createTable(app, { name });
+    const closed = await createTable(app, { name: `${name} closed` });
+    await app.get(TablesService).close(closed.id);
+    await createTable(app);
+
+    const { content, info } = await listedTables({
+      filter: `name=like="*${name.slice(6).toUpperCase()}*"`,
+    });
+
+    expect(content.map(({ id }) => id)).toEqual([open.id]);
+    expect(info.totalElements).toBe(1);
+  });
+
+  it.each([
+    { page: -1 },
+    { perPage: 0 },
+    { perPage: MAX_PAGE_SIZE + 1 },
+    { filter: '' },
+    { filter: 'seats==5' },
+    { filter: 'name=' },
+  ])('rejects the query %j', async (query) => {
+    await listTables(query).expect(400);
+  });
 });

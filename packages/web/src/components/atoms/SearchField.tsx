@@ -32,7 +32,7 @@ export function SearchField({
       )}
     >
       {label && <Label>{label}</Label>}
-      <div className="flex min-h-9 items-center rounded-lg border border-input bg-card transition focus-within:border-foreground hover:border-ring focus-within:hover:border-foreground">
+      <div className="flex min-h-9 items-center rounded-lg border border-input bg-card backdrop-blur-xl transition focus-within:border-foreground hover:border-ring focus-within:hover:border-foreground">
         <Search
           aria-hidden
           className="ml-3 h-4 w-4 shrink-0 text-muted-foreground"

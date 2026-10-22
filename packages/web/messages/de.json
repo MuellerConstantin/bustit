@@ -286,7 +286,11 @@
       "error": "Die Tische konnten nicht geladen werden.",
       "retry": "Erneut versuchen",
       "empty": "Gerade ist kein Tisch offen.",
-      "more": "{shown} von {total} Tischen angezeigt"
+      "more": "{shown} von {total} Tischen angezeigt",
+      "search": "Tische suchen",
+      "searchPlaceholder": "Name des Tisches",
+      "clearSearch": "Suche leeren",
+      "noMatches": "Kein offener Tisch zu „{search}“."
     },
     "tableCard": {
       "seatsLabel": "Plätze",

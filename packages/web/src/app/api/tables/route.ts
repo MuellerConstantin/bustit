@@ -1,11 +1,11 @@
-import { pageQuerySchema } from '@bustit/shared';
+import { listTablesQuerySchema } from '@bustit/shared';
 import { HttpStatusCode } from 'axios';
 import type { NextRequest } from 'next/server';
 import { listTables } from '@/lib/server/api';
 import { respondOnBehalf } from '@/lib/server/bff';
 
 export function GET(request: NextRequest) {
-  const query = pageQuerySchema.safeParse(
+  const query = listTablesQuerySchema.safeParse(
     Object.fromEntries(request.nextUrl.searchParams),
   );
 

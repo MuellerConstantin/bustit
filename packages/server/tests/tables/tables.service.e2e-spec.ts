@@ -139,6 +139,27 @@ describe('TablesService', () => {
     });
   });
 
+  describe('list with openOnly', () => {
+    it('leaves out closed tables, even if the filter asks for them', async () => {
+      const name = uniqueTableName();
+      const open = await createTable(app, { name });
+      const closed = await createTable(app, { name: `${name} closed` });
+      await service.close(closed.id);
+
+      const result = await service.list(
+        {
+          filter: `status==closed,name=like="*${name.slice(6)}*"`,
+          page: 0,
+          perPage: MAX_PAGE_SIZE,
+        },
+        { openOnly: true },
+      );
+
+      expect(result.tables.map(({ id }) => id)).toEqual([open.id]);
+      expect(result.totalElements).toBe(1);
+    });
+  });
+
   describe('close', () => {
     it('closes an open table', async () => {
       const table = await createTable(app);
