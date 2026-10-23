@@ -26,9 +26,9 @@ such as the order in which environment files are loaded.
 
 Changing these variables requires a rebuild of the web app.
 
-| Environment Variable        | Description                                                                                                                                                                                                                                                           | Required |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| NEXT_OUTPUT_MODE            | Set to `standalone` to build a self-contained server for a container image. Unset, a regular build is made.                                                                                                                                                          | No       |
+| Environment Variable        | Description                                                                                                                                                                                                                                                  | Required |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| NEXT_OUTPUT_MODE            | Set to `standalone` to build a self-contained server for a container image. Unset, a regular build is made.                                                                                                                                                  | No       |
 | NEXT_PUBLIC_GAME_SERVER_URL | URL the browser connects to the game server's live connection at, without the `/api` prefix (e.g. `http://<HOST>:8080`). Browsers connect to it directly, so it must be reachable from them. It is public and holds no secret, and it is built into the app. | Yes      |
 
 `NEXT_PUBLIC_GAME_SERVER_URL` is the only `NEXT_PUBLIC_` variable. Next.js builds the value into the
