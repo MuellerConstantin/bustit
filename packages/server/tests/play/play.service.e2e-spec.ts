@@ -1,6 +1,6 @@
 import { createSeededRng } from '@bustit/engine';
 import { and, asc, eq } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
   InsufficientBalanceError,
   LedgerService,
@@ -13,6 +13,7 @@ import {
   InvalidSeatError,
   NotSeatedError,
   PlayService,
+  type PlayTimings,
   RoundInProgressError,
   RoundRejectedError,
   SeatEmptyError,
@@ -30,6 +31,9 @@ const TABLE = 'table-1';
 
 const TABLE_CONFIG: TableConfig = { seats: 5, minBet: 5, maxBet: 10_000 };
 
+/** Timers that never fire within a test. */
+const QUIET: PlayTimings = { betWindowMs: 60_000, turnMs: 60_000 };
+
 /** Every player starts with the starting balance booked as signup bonus. */
 const STARTING_BALANCE = 1000;
 
@@ -44,14 +48,24 @@ describe('PlayService', () => {
     await app.close();
   });
 
+  const services: PlayService[] = [];
+
+  afterEach(() => {
+    for (const service of services.splice(0)) {
+      service.onModuleDestroy();
+    }
+  });
+
   /** A service with an open table, dealing from a generator seeded with `seed`. */
-  function newService(seed: string): PlayService {
+  function newService(seed: string, timings = QUIET): PlayService {
     const service = new PlayService(
       createSeededRng(seed),
       app.db,
       app.get(LedgerService),
       app.get(TablesService),
+      timings,
     );
+    services.push(service);
     service.openTable(TABLE, TABLE_CONFIG);
 
     return service;
@@ -94,14 +108,27 @@ describe('PlayService', () => {
     }
   }
 
+  /** Waits until the condition holds, for things the timers do on their own. */
+  async function eventually(condition: () => boolean): Promise<void> {
+    const deadline = Date.now() + 5000;
+
+    while (!condition()) {
+      if (Date.now() > deadline) {
+        throw new Error('The condition did not hold in time');
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+  }
+
   /*
    * Alice on seat 0 and bob on seat 2 with a round dealt and still to be
    * played. A blackjack can settle a round right away, so seeds are tried
    * until one doesn't.
    */
-  async function roundInPlay(stake = 10) {
+  async function roundInPlay(stake = 10, timings = QUIET) {
     for (let attempt = 0; attempt < 50; attempt++) {
-      const service = newService(`round-in-play-${attempt}`);
+      const service = newService(`round-in-play-${attempt}`, timings);
       const alice = await createPlayer(app);
       const bob = await createPlayer(app);
 
@@ -128,6 +155,7 @@ describe('PlayService', () => {
         seats: Array.from({ length: TABLE_CONFIG.seats }, () => null),
         bets: [],
         round: null,
+        deadline: null,
       });
     });
 
@@ -456,6 +484,149 @@ describe('PlayService', () => {
       await service.dealRound(TABLE, alice.id);
 
       expect(service.publicState(TABLE).round?.seats).toHaveLength(1);
+    });
+  });
+
+  describe('timers', () => {
+    const FAST: PlayTimings = { betWindowMs: 100, turnMs: 300 };
+
+    it('opens the betting window with the first bet and deals when it ends', async () => {
+      const service = newService('betting-window', FAST);
+      const alice = await createPlayer(app);
+      const dealt: boolean[] = [];
+
+      service.onChange(({ events }) => dealt.push(!!events));
+      await service.sit(TABLE, 0, alice.id);
+
+      expect(service.publicState(TABLE).deadline).toBeNull();
+
+      await service.placeBet(TABLE, alice.id, 10);
+
+      expect(service.publicState(TABLE).deadline).not.toBeNull();
+
+      await eventually(() => service.publicState(TABLE).round !== null);
+
+      expect(service.publicState(TABLE).bets).toEqual([]);
+      expect(await entriesOf(alice.id, 'bet')).toMatchObject([{ delta: -10 }]);
+      expect(dealt).toContain(true);
+    });
+
+    it('does not deal when the bets are gone before the window ends', async () => {
+      const service = newService('betting-window', FAST);
+      const alice = await createPlayer(app);
+
+      await service.sit(TABLE, 0, alice.id);
+      await service.placeBet(TABLE, alice.id, 10);
+      await service.leave(TABLE, alice.id);
+
+      expect(service.publicState(TABLE).deadline).toBeNull();
+
+      await new Promise((resolve) => setTimeout(resolve, 250));
+
+      expect(service.publicState(TABLE).round).toBeNull();
+    });
+
+    it('sends a stand to every seat that lets its turn run out', async () => {
+      const { service, alice, bob } = await roundInPlay(10, FAST);
+
+      expect(service.publicState(TABLE).deadline).not.toBeNull();
+
+      await eventually(
+        () => service.publicState(TABLE).round?.phase === 'settled',
+      );
+
+      expect(service.publicState(TABLE).deadline).toBeNull();
+
+      for (const [seat, player] of [
+        [0, alice],
+        [2, bob],
+      ] as const) {
+        expect(await balanceOf(player.id)).toBe(
+          STARTING_BALANCE - 10 + payoutOf(service, seat),
+        );
+      }
+    });
+
+    it('gives the next seat its own time after a seat acted', async () => {
+      const { service, alice, bob } = await roundInPlay(10, {
+        betWindowMs: 60_000,
+        turnMs: 400,
+      });
+      const { seat } = service.publicState(TABLE).round!.turn!;
+
+      await service.act(TABLE, seat === 0 ? alice.id : bob.id, 'stand');
+
+      const { round } = service.publicState(TABLE);
+
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // The timer of the seat that acted must not stand the next one.
+      expect(service.publicState(TABLE).round?.turn).toEqual(round?.turn);
+    });
+  });
+
+  describe('absence', () => {
+    it('frees the seat and the bet of an absent user between rounds', async () => {
+      const service = newService('absence');
+
+      await service.sit(TABLE, 0, 'alice');
+      await service.placeBet(TABLE, 'alice', 10);
+      await service.absent(TABLE, 'alice');
+
+      const state = service.publicState(TABLE);
+
+      expect(state.seats[0]).toBeNull();
+      expect(state.bets).toEqual([]);
+      expect(state.deadline).toBeNull();
+    });
+
+    it('plays on for an absent user and frees the seat after the round', async () => {
+      const { service, alice, bob } = await roundInPlay();
+
+      await service.absent(TABLE, alice.id);
+
+      // Alice's hand is stood at once, bob takes his time.
+      await eventually(() => {
+        const { round } = service.publicState(TABLE);
+        return round?.phase === 'settled' || round?.turn?.seat === 2;
+      });
+      await playOut(service);
+
+      expect(service.publicState(TABLE).seats).toEqual([
+        null,
+        null,
+        bob.id,
+        null,
+        null,
+      ]);
+      expect(await balanceOf(alice.id)).toBe(
+        STARTING_BALANCE - 10 + payoutOf(service, 0),
+      );
+    });
+
+    it('keeps the seat of a user who is back before the round ends', async () => {
+      const { service, alice } = await roundInPlay();
+
+      await service.absent(TABLE, alice.id);
+      await service.present(TABLE, alice.id);
+      await playOut(service);
+
+      expect(service.publicState(TABLE).seats[0]).toBe(alice.id);
+    });
+
+    it('ignores a user who does not sit at the table', async () => {
+      const service = newService('absence');
+
+      await expect(service.absent(TABLE, 'alice')).resolves.toBeUndefined();
+    });
+
+    it('lists the tables a user sits at', async () => {
+      const service = newService('absence');
+
+      await service.sit(TABLE, 0, 'alice');
+
+      expect(service.tablesOf('alice')).toEqual([TABLE]);
+      expect(service.tablesOf('bob')).toEqual([]);
     });
   });
 

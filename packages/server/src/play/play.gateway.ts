@@ -8,9 +8,11 @@ import {
   tableRequestSchema,
 } from '@bustit/shared';
 import type { RoundEvent } from '@bustit/engine';
+import { Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
+  type OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -32,7 +34,11 @@ import {
   SeatTakenError,
   TableNotOpenError,
 } from './play.errors.js';
-import { PlayService, type PublicTableState } from './play.service.js';
+import {
+  PlayService,
+  type PublicTableState,
+  type TableChange,
+} from './play.service.js';
 
 /** What a message is answered with. */
 export type PlayAck =
@@ -57,15 +63,55 @@ const roomOf = (tableId: string) => `table:${tableId}`;
 /**
  * The messages a connected user plays with. Joining a table subscribes the
  * connection to the table's room, whose members get every change as the
- * public state, so nothing secret leaves the server. The connection check
- * lives in the `RealtimeAdapter`, so handlers only see logged-in users.
+ * public state, so nothing secret leaves the server. The changes come from
+ * the `PlayService`, whether a message or a timer caused them. The
+ * connection check lives in the `RealtimeAdapter`, so handlers only see
+ * logged-in users.
  */
 @WebSocketGateway({ path: REALTIME_PATH })
-export class PlayGateway {
+export class PlayGateway
+  implements OnModuleInit, OnModuleDestroy, OnGatewayDisconnect
+{
+  private readonly logger = new Logger(PlayGateway.name);
+  private stopListening: (() => void) | null = null;
+
   @WebSocketServer()
   private readonly server!: Server;
 
   constructor(private readonly play: PlayService) {}
+
+  onModuleInit(): void {
+    this.stopListening = this.play.onChange((change) => {
+      this.publish(change);
+    });
+  }
+
+  onModuleDestroy(): void {
+    this.stopListening?.();
+  }
+
+  /**
+   * Seats of a user whose last connection to a table is gone are given up,
+   * see `PlayService.absent`. Another tab of the same user keeps them.
+   */
+  async handleDisconnect(socket: Socket): Promise<void> {
+    const { user } = socket.data as RealtimeSocketData;
+
+    try {
+      for (const tableId of this.play.tablesOf(user.id)) {
+        const members = await this.server.in(roomOf(tableId)).fetchSockets();
+
+        if (!members.some((member) => connectedAs(member.data, user.id))) {
+          await this.play.absent(tableId, user.id);
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        `Giving up the seats of user ${user.id} failed`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
+  }
 
   /** Opens the table if needed, joins its room and answers its state. */
   @SubscribeMessage('table:join')
@@ -77,9 +123,10 @@ export class PlayGateway {
       socket,
       body,
       tableRequestSchema,
-      async ({ tableId }) => {
+      async ({ tableId }, user) => {
         await this.play.ensureOpen(tableId);
         await socket.join(roomOf(tableId));
+        await this.play.present(tableId, user.id);
 
         return this.play.publicState(tableId);
       },
@@ -87,24 +134,25 @@ export class PlayGateway {
     );
   }
 
-  /** Frees the user's seat, if any, and leaves the table's room. */
+  /**
+   * Frees the user's seat, if any, and leaves the table's room. A seat in
+   * the middle of a round is freed when the round is settled, its hands are
+   * played with a stand.
+   */
   @SubscribeMessage('table:leave')
   leave(
     @ConnectedSocket() socket: Socket,
     @MessageBody() body: unknown,
   ): Promise<PlayAck> {
-    return this.handle(socket, body, tableRequestSchema, async (request, user) => {
-      try {
-        await this.play.leave(request.tableId, user.id);
-      } catch (error) {
-        if (!(error instanceof NotSeatedError)) {
-          throw error;
-        }
-      }
-
-      await socket.leave(roomOf(request.tableId));
-      this.publish(request.tableId);
-    });
+    return this.handle(
+      socket,
+      body,
+      tableRequestSchema,
+      async ({ tableId }, user) => {
+        await this.play.absent(tableId, user.id);
+        await socket.leave(roomOf(tableId));
+      },
+    );
   }
 
   @SubscribeMessage('table:sit')
@@ -112,10 +160,14 @@ export class PlayGateway {
     @ConnectedSocket() socket: Socket,
     @MessageBody() body: unknown,
   ): Promise<PlayAck> {
-    return this.handle(socket, body, sitRequestSchema, async (request, user) => {
-      await this.play.sit(request.tableId, request.seat, user.id);
-      this.publish(request.tableId);
-    });
+    return this.handle(
+      socket,
+      body,
+      sitRequestSchema,
+      async ({ tableId, seat }, user) => {
+        await this.play.sit(tableId, seat, user.id);
+      },
+    );
   }
 
   /** Frees the user's seat but stays at the table as a spectator. */
@@ -124,10 +176,14 @@ export class PlayGateway {
     @ConnectedSocket() socket: Socket,
     @MessageBody() body: unknown,
   ): Promise<PlayAck> {
-    return this.handle(socket, body, tableRequestSchema, async (request, user) => {
-      await this.play.leave(request.tableId, user.id);
-      this.publish(request.tableId);
-    });
+    return this.handle(
+      socket,
+      body,
+      tableRequestSchema,
+      async ({ tableId }, user) => {
+        await this.play.leave(tableId, user.id);
+      },
+    );
   }
 
   /** Places the stake for the next round. */
@@ -136,10 +192,14 @@ export class PlayGateway {
     @ConnectedSocket() socket: Socket,
     @MessageBody() body: unknown,
   ): Promise<PlayAck> {
-    return this.handle(socket, body, betRequestSchema, async (request, user) => {
-      await this.play.placeBet(request.tableId, user.id, request.stake);
-      this.publish(request.tableId);
-    });
+    return this.handle(
+      socket,
+      body,
+      betRequestSchema,
+      async ({ tableId, stake }, user) => {
+        await this.play.placeBet(tableId, user.id, stake);
+      },
+    );
   }
 
   /** Deals the next round to the seats that placed a bet. */
@@ -148,10 +208,14 @@ export class PlayGateway {
     @ConnectedSocket() socket: Socket,
     @MessageBody() body: unknown,
   ): Promise<PlayAck> {
-    return this.handle(socket, body, tableRequestSchema, async (request, user) => {
-      const events = await this.play.dealRound(request.tableId, user.id);
-      this.publish(request.tableId, events);
-    });
+    return this.handle(
+      socket,
+      body,
+      tableRequestSchema,
+      async ({ tableId }, user) => {
+        await this.play.dealRound(tableId, user.id);
+      },
+    );
   }
 
   @SubscribeMessage('round:action')
@@ -159,14 +223,14 @@ export class PlayGateway {
     @ConnectedSocket() socket: Socket,
     @MessageBody() body: unknown,
   ): Promise<PlayAck> {
-    return this.handle(socket, body, actionRequestSchema, async (request, user) => {
-      const events = await this.play.act(
-        request.tableId,
-        user.id,
-        request.type,
-      );
-      this.publish(request.tableId, events);
-    });
+    return this.handle(
+      socket,
+      body,
+      actionRequestSchema,
+      async ({ tableId, type }, user) => {
+        await this.play.act(tableId, user.id, type);
+      },
+    );
   }
 
   /**
@@ -216,11 +280,14 @@ export class PlayGateway {
     }
   }
 
-  private publish(tableId: string, events?: readonly RoundEvent[]): void {
+  private publish({ tableId, events }: TableChange): void {
     const room = this.server.to(roomOf(tableId));
 
     if (events) {
-      room.emit('round:events', { tableId, events } satisfies RoundEventsMessage);
+      room.emit('round:events', {
+        tableId,
+        events,
+      } satisfies RoundEventsMessage);
     }
 
     room.emit('table:state', {
@@ -228,6 +295,11 @@ export class PlayGateway {
       ...this.play.publicState(tableId),
     } satisfies TableStateMessage);
   }
+}
+
+/** Whether the data a connection carries belongs to the user. */
+function connectedAs(data: unknown, userId: string): boolean {
+  return (data as RealtimeSocketData).user.id === userId;
 }
 
 /** The expected failures and the code each one is answered with. */

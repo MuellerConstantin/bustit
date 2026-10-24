@@ -212,6 +212,33 @@ describe('play gateway (e2e)', () => {
     ).resolves.toMatchObject({ ok: false, error: 'not_joined' });
   });
 
+  it('frees the seat of a user whose connection drops', async () => {
+    const { table, aliceSocket, bobSocket } = await tableWithTwoPlayers();
+
+    await send(aliceSocket, 'table:sit', { tableId: table.id, seat: 0 });
+    aliceSocket.close();
+
+    await stateWhere(bobSocket, ({ seats }) => seats[0] === null);
+  });
+
+  it('keeps the seat while another connection of the user is at the table', async () => {
+    const { table, alice, aliceSocket, bobSocket } =
+      await tableWithTwoPlayers();
+    const otherTab = await connect(alice);
+
+    await send(otherTab, 'table:join', { tableId: table.id });
+    await send(aliceSocket, 'table:sit', { tableId: table.id, seat: 0 });
+    aliceSocket.close();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    await expect(
+      send(bobSocket, 'table:join', { tableId: table.id }),
+    ).resolves.toMatchObject({
+      ok: true,
+      state: { seats: [alice.id, null, null, null, null] },
+    });
+  });
+
   it('plays a round to the end without showing the shoe', async () => {
     const { table, alice, bob, aliceSocket, bobSocket } =
       await tableWithTwoPlayers();

@@ -17,7 +17,12 @@ import {
   publicView,
   startRound,
 } from '@bustit/engine';
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  type OnModuleDestroy,
+} from '@nestjs/common';
 import { InjectDrizzle } from '@nestjs/drizzle';
 import type {
   Database,
@@ -41,6 +46,21 @@ import {
 /** Injection token of the generator that shuffles the shoes and deals. */
 export const ROUND_RNG = Symbol('ROUND_RNG');
 
+/** Injection token of the `PlayTimings`. */
+export const PLAY_TIMINGS = Symbol('PLAY_TIMINGS');
+
+export type PlayTimings = {
+  /** How long bets can be placed after the first one before the round is dealt. */
+  readonly betWindowMs: number;
+  /** How long a seat has to act before it is sent a stand. */
+  readonly turnMs: number;
+};
+
+export const DEFAULT_PLAY_TIMINGS: PlayTimings = {
+  betWindowMs: 15_000,
+  turnMs: 20_000,
+};
+
 /** What an open table is set up with. */
 export type TableConfig = {
   readonly seats: number;
@@ -56,6 +76,13 @@ type ActiveRound = {
   readonly state: RoundState;
 };
 
+/** The one timer a table has running: the betting window or a seat's turn. */
+type ArmedTimer = {
+  readonly kind: 'bet' | 'turn';
+  readonly endsAt: number;
+  readonly handle: NodeJS.Timeout;
+};
+
 /** What the server keeps per open table: who sits where, the shoe and the round. */
 type PlayTable = {
   readonly rules: TableRules;
@@ -65,8 +92,11 @@ type PlayTable = {
   readonly seats: (string | null)[];
   /** The stake each seat has placed for the next round. */
   readonly bets: Map<number, number>;
+  /** Users whose connection is gone but whose hands are still in the round. */
+  readonly absent: Set<string>;
   shoe: Shoe;
   round: ActiveRound | null;
+  timer: ArmedTimer | null;
   /** The calls waiting for their turn, see `exclusive`. */
   queue: Promise<unknown>;
 };
@@ -77,23 +107,57 @@ export type PublicTableState = {
   /** The bets placed for the next round, in seat order. */
   readonly bets: readonly Bet[];
   readonly round: PublicRoundState | null;
+  /**
+   * When the running timer ends, as an ISO timestamp: the betting window
+   * before a round, the turn of the seat to act during one.
+   */
+  readonly deadline: string | null;
 };
+
+/** A table changed, by a call or by one of its timers. */
+export type TableChange = {
+  readonly tableId: string;
+  /** What happened in the round, if cards were dealt or played. */
+  readonly events?: readonly RoundEvent[];
+};
+
+export type TableChangeListener = (change: TableChange) => void;
 
 /**
  * Keeps the seats and the current round of every open table in memory. The
  * engine decides the rules, this service checks who may do what, books the
- * stakes and payouts on the ledger and stores the results.
+ * stakes and payouts on the ledger, stores the results and lets the timers
+ * of the table deal and stand when nobody acts. Everyone interested in the
+ * changes listens with `onChange`.
  */
 @Injectable()
-export class PlayService {
+export class PlayService implements OnModuleDestroy {
+  private readonly logger = new Logger(PlayService.name);
   private readonly tables = new Map<string, PlayTable>();
+  private readonly listeners = new Set<TableChangeListener>();
 
   constructor(
     @Inject(ROUND_RNG) private readonly rng: Rng,
     @InjectDrizzle() private readonly db: Database,
     private readonly ledger: LedgerService,
     private readonly tablesService: TablesService,
+    @Inject(PLAY_TIMINGS) private readonly timings: PlayTimings,
   ) {}
+
+  onModuleDestroy(): void {
+    for (const table of this.tables.values()) {
+      clearTimer(table);
+    }
+  }
+
+  /** Returns a function that stops listening. */
+  onChange(listener: TableChangeListener): () => void {
+    this.listeners.add(listener);
+
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
 
   /** @throws TableAlreadyOpenError if the table is open already. */
   openTable(
@@ -110,8 +174,10 @@ export class PlayService {
       maxBet,
       seats: Array.from({ length: seats }, () => null),
       bets: new Map(),
+      absent: new Set(),
       shoe: createShoe(rules, this.rng),
       round: null,
+      timer: null,
       queue: Promise.resolve(),
     });
   }
@@ -145,8 +211,16 @@ export class PlayService {
         throw new RoundInProgressError(tableId);
       }
 
+      clearTimer(table);
       this.tables.delete(tableId);
     });
+  }
+
+  /** The ids of the open tables the user sits at. */
+  tablesOf(userId: string): string[] {
+    return [...this.tables]
+      .filter(([, table]) => table.seats.includes(userId))
+      .map(([tableId]) => tableId);
   }
 
   /**
@@ -169,6 +243,7 @@ export class PlayService {
       }
 
       table.seats[seat] = userId;
+      this.emit(tableId);
     });
   }
 
@@ -186,14 +261,51 @@ export class PlayService {
         throw new RoundInProgressError(tableId);
       }
 
-      table.seats[seat] = null;
-      table.bets.delete(seat);
+      this.free(tableId, table, seat);
+    });
+  }
+
+  /**
+   * The user's connection is gone. Between rounds the seat is freed. During
+   * a round the hands are played on, with a stand as soon as one is to act,
+   * and the seat is freed once the round is settled.
+   */
+  absent(tableId: string, userId: string): Promise<void> {
+    return this.exclusive(tableId, (table) => {
+      const seat = table.seats.indexOf(userId);
+
+      if (seat === -1) {
+        return;
+      }
+
+      const round = table.round?.state;
+
+      if (round?.phase !== 'playerTurns') {
+        this.free(tableId, table, seat);
+        return;
+      }
+
+      table.absent.add(userId);
+
+      if (round.turn?.seat === seat) {
+        this.armTurn(tableId, table);
+      }
+
+      this.emit(tableId);
+    });
+  }
+
+  /** The user is back, so their seat is kept after the round. */
+  present(tableId: string, userId: string): Promise<void> {
+    return this.exclusive(tableId, (table) => {
+      table.absent.delete(userId);
     });
   }
 
   /**
    * Places the stake of the user's seat for the next round, replacing an
-   * earlier one. Nothing is booked before the round is dealt.
+   * earlier one. Nothing is booked before the round is dealt. The first bet
+   * opens the betting window, after which the round is dealt on its own.
    *
    * @throws NotSeatedError if the user does not sit at the table.
    * @throws RoundInProgressError while a round is being played.
@@ -209,6 +321,8 @@ export class PlayService {
 
       assertWithinLimits(table, stake);
       table.bets.set(seat, stake);
+      this.armBet(tableId, table);
+      this.emit(tableId);
     });
   }
 
@@ -228,9 +342,12 @@ export class PlayService {
     tableId: string,
     bets: readonly Bet[],
   ): Promise<readonly RoundEvent[]> {
-    return this.exclusive(tableId, (table) =>
-      this.start(tableId, table, bets),
-    );
+    return this.exclusive(tableId, async (table) => {
+      const events = await this.start(tableId, table, bets);
+      this.emit(tableId, events);
+
+      return events;
+    });
   }
 
   /**
@@ -247,13 +364,14 @@ export class PlayService {
     return this.exclusive(tableId, async (table) => {
       seatOf(table, userId);
 
-      const bets = [...table.bets].map(([seat, stake]) => ({ seat, stake }));
-
       try {
-        return await this.start(tableId, table, bets);
+        const events = await this.start(tableId, table, betsOf(table));
+        this.emit(tableId, events);
+
+        return events;
       } catch (error) {
         if (error instanceof InsufficientBalanceError) {
-          table.bets.delete(table.seats.indexOf(error.userId));
+          this.dropBet(tableId, table, error.userId);
         }
 
         throw error;
@@ -277,36 +395,15 @@ export class PlayService {
     type: ActionType,
   ): Promise<readonly RoundEvent[]> {
     return this.exclusive(tableId, async (table) => {
-      const seat = seatOf(table, userId);
-      const { round } = table;
-
-      if (!round) {
-        throw new RoundRejectedError(
-          'ROUND_FINISHED',
-          'No round is in progress',
-        );
-      }
-
-      const update = unwrap(
-        applyAction(round.state, { seat, type }, { rng: this.rng }),
+      const events = await this.apply(
+        tableId,
+        table,
+        seatOf(table, userId),
+        type,
       );
-      const extraStake =
-        availableActions(round.state)?.actions.find(
-          (action) => action.type === type,
-        )?.additionalStake ?? 0;
+      this.emit(tableId, events);
 
-      await this.db.transaction(async (tx) => {
-        if (extraStake > 0) {
-          await this.ledger.book(
-            { userId, delta: -extraStake, reason: 'bet', ref: round.id },
-            tx,
-          );
-        }
-
-        await this.payOut(table, update.round, round.id, tx);
-      });
-
-      return store(table, round.id, update);
+      return events;
     });
   }
 
@@ -316,10 +413,9 @@ export class PlayService {
 
     return {
       seats: [...table.seats],
-      bets: [...table.bets]
-        .map(([seat, stake]) => ({ seat, stake }))
-        .sort((a, b) => a.seat - b.seat),
+      bets: betsOf(table),
       round: table.round ? publicView(table.round.state) : null,
+      deadline: table.timer ? new Date(table.timer.endsAt).toISOString() : null,
     };
   }
 
@@ -359,6 +455,27 @@ export class PlayService {
     );
 
     return await run;
+  }
+
+  private emit(tableId: string, events?: readonly RoundEvent[]): void {
+    const change: TableChange = events ? { tableId, events } : { tableId };
+
+    for (const listener of this.listeners) {
+      listener(change);
+    }
+  }
+
+  private free(tableId: string, table: PlayTable, seat: number): void {
+    table.seats[seat] = null;
+    table.bets.delete(seat);
+    this.armBet(tableId, table);
+    this.emit(tableId);
+  }
+
+  private dropBet(tableId: string, table: PlayTable, userId: string): void {
+    table.bets.delete(table.seats.indexOf(userId));
+    this.armBet(tableId, table);
+    this.emit(tableId);
   }
 
   private async start(
@@ -404,7 +521,78 @@ export class PlayService {
 
     table.bets.clear();
 
-    return store(table, roundId, update);
+    return this.store(tableId, table, roundId, update);
+  }
+
+  private async apply(
+    tableId: string,
+    table: PlayTable,
+    seat: number,
+    type: ActionType,
+  ): Promise<readonly RoundEvent[]> {
+    const { round } = table;
+
+    if (!round) {
+      throw new RoundRejectedError('ROUND_FINISHED', 'No round is in progress');
+    }
+
+    const update = unwrap(
+      applyAction(round.state, { seat, type }, { rng: this.rng }),
+    );
+    const extraStake =
+      availableActions(round.state)?.actions.find(
+        (action) => action.type === type,
+      )?.additionalStake ?? 0;
+
+    await this.db.transaction(async (tx) => {
+      if (extraStake > 0) {
+        await this.ledger.book(
+          {
+            userId: table.seats[seat]!,
+            delta: -extraStake,
+            reason: 'bet',
+            ref: round.id,
+          },
+          tx,
+        );
+      }
+
+      await this.payOut(table, update.round, round.id, tx);
+    });
+
+    return this.store(tableId, table, round.id, update);
+  }
+
+  /**
+   * Keeps the new round once the bookings are committed, frees the seats of
+   * users who left in the meantime once it is settled and sets the timer for
+   * what comes next.
+   */
+  private store(
+    tableId: string,
+    table: PlayTable,
+    roundId: string,
+    { round, events }: RoundUpdate,
+  ): readonly RoundEvent[] {
+    table.round = { id: roundId, state: round };
+    table.shoe = round.shoe;
+
+    if (round.phase === 'settled') {
+      for (const userId of table.absent) {
+        const seat = table.seats.indexOf(userId);
+
+        if (seat !== -1) {
+          table.seats[seat] = null;
+          table.bets.delete(seat);
+        }
+      }
+
+      table.absent.clear();
+    }
+
+    this.armTurn(tableId, table);
+
+    return events;
   }
 
   /**
@@ -442,6 +630,134 @@ export class PlayService {
       }
     }
   }
+
+  /**
+   * Gives the seat to act its time, or none if its user is gone, and stops
+   * the timer when there is nobody to wait for.
+   */
+  private armTurn(tableId: string, table: PlayTable): void {
+    const round = table.round?.state;
+
+    if (round?.phase !== 'playerTurns' || !round.turn) {
+      clearTimer(table);
+      return;
+    }
+
+    const userId = table.seats[round.turn.seat];
+
+    this.arm(
+      tableId,
+      table,
+      'turn',
+      userId && table.absent.has(userId) ? 0 : this.timings.turnMs,
+    );
+  }
+
+  /**
+   * Opens the betting window with the first bet and closes it when the bets
+   * are gone. Later bets don't extend a window that is running.
+   */
+  private armBet(tableId: string, table: PlayTable): void {
+    if (table.round?.state.phase === 'playerTurns') {
+      return;
+    }
+
+    if (table.bets.size === 0) {
+      clearTimer(table);
+      return;
+    }
+
+    if (table.timer?.kind !== 'bet') {
+      this.arm(tableId, table, 'bet', this.timings.betWindowMs);
+    }
+  }
+
+  private arm(
+    tableId: string,
+    table: PlayTable,
+    kind: ArmedTimer['kind'],
+    delayMs: number,
+  ): void {
+    clearTimer(table);
+
+    const timer: ArmedTimer = {
+      kind,
+      endsAt: Date.now() + delayMs,
+      handle: setTimeout(() => this.fire(tableId, timer), delayMs),
+    };
+
+    // A timer alone doesn't keep the process alive.
+    timer.handle.unref();
+    table.timer = timer;
+  }
+
+  /*
+   * Runs like any other call on the table. By then the timer may have been
+   * replaced, e.g. because someone acted just in time, which makes it void.
+   */
+  private fire(tableId: string, timer: ArmedTimer): void {
+    this.exclusive(tableId, async (table) => {
+      if (table.timer !== timer) {
+        return;
+      }
+
+      table.timer = null;
+
+      if (timer.kind === 'turn') {
+        await this.standForTurn(tableId, table);
+      } else {
+        await this.dealPlacedBets(tableId, table);
+      }
+    }).catch((error: unknown) => {
+      this.logger.error(
+        `The ${timer.kind} timer of table ${tableId} failed`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    });
+  }
+
+  /** Sends the seat that ran out of time a stand. */
+  private async standForTurn(tableId: string, table: PlayTable): Promise<void> {
+    const turn = table.round?.state.turn;
+
+    if (!turn) {
+      return;
+    }
+
+    this.emit(tableId, await this.apply(tableId, table, turn.seat, 'stand'));
+  }
+
+  /** Deals the placed bets, leaving out the ones the balance doesn't cover. */
+  private async dealPlacedBets(
+    tableId: string,
+    table: PlayTable,
+  ): Promise<void> {
+    while (table.bets.size > 0) {
+      try {
+        this.emit(tableId, await this.start(tableId, table, betsOf(table)));
+        return;
+      } catch (error) {
+        if (!(error instanceof InsufficientBalanceError)) {
+          throw error;
+        }
+
+        this.dropBet(tableId, table, error.userId);
+      }
+    }
+  }
+}
+
+function clearTimer(table: PlayTable): void {
+  if (table.timer) {
+    clearTimeout(table.timer.handle);
+    table.timer = null;
+  }
+}
+
+function betsOf(table: PlayTable): Bet[] {
+  return [...table.bets]
+    .map(([seat, stake]) => ({ seat, stake }))
+    .sort((a, b) => a.seat - b.seat);
 }
 
 function seatOf(table: PlayTable, userId: string): number {
@@ -469,16 +785,4 @@ function unwrap(result: Result<RoundUpdate>): RoundUpdate {
   }
 
   return result.value;
-}
-
-/** Keeps the new round once the bookings are committed. */
-function store(
-  table: PlayTable,
-  roundId: string,
-  { round, events }: RoundUpdate,
-): readonly RoundEvent[] {
-  table.round = { id: roundId, state: round };
-  table.shoe = round.shoe;
-
-  return events;
 }

@@ -19,8 +19,13 @@ export {
 } from './play.gateway.js';
 export { PlayModule } from './play.module.js';
 export {
+  DEFAULT_PLAY_TIMINGS,
+  PLAY_TIMINGS,
   PlayService,
+  type PlayTimings,
   type PublicTableState,
   ROUND_RNG,
+  type TableChange,
+  type TableChangeListener,
   type TableConfig,
 } from './play.service.js';

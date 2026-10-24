@@ -4,7 +4,12 @@ import { Module } from '@nestjs/common';
 import { LedgerModule } from '../ledger/index.js';
 import { TablesModule } from '../tables/index.js';
 import { PlayGateway } from './play.gateway.js';
-import { PlayService, ROUND_RNG } from './play.service.js';
+import {
+  DEFAULT_PLAY_TIMINGS,
+  PLAY_TIMINGS,
+  PlayService,
+  ROUND_RNG,
+} from './play.service.js';
 
 @Module({
   imports: [LedgerModule, TablesModule],
@@ -15,6 +20,7 @@ import { PlayService, ROUND_RNG } from './play.service.js';
       provide: ROUND_RNG,
       useFactory: () => createSeededRng(randomBytes(32).toString('hex')),
     },
+    { provide: PLAY_TIMINGS, useValue: DEFAULT_PLAY_TIMINGS },
   ],
   exports: [PlayService],
 })
