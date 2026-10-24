@@ -1,5 +1,5 @@
 {
-  "id": "6c231dea-3901-463c-a1c2-ddd23f286e6d",
+  "id": "6b5ee34b-0874-481f-a8dc-3e3ab0f49c05",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -303,6 +303,88 @@
       },
       "isRLSEnabled": false
     },
+    "public.rounds": {
+      "name": "rounds",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuidv7()"
+        },
+        "table_id": {
+          "name": "table_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "round_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'open'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "ended_at": {
+          "name": "ended_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "rounds_status_index": {
+          "name": "rounds_status_index",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "rounds_table_id_tables_id_fk": {
+          "name": "rounds_table_id_tables_id_fk",
+          "tableFrom": "rounds",
+          "tableTo": "tables",
+          "columnsFrom": [
+            "table_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "rounds_ended_at_matches_status": {
+          "name": "rounds_ended_at_matches_status",
+          "value": "(\"rounds\".\"status\" = 'open') = (\"rounds\".\"ended_at\" is null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
     "public.tables": {
       "name": "tables",
       "schema": "",
@@ -485,6 +567,15 @@
         "daily_bonus",
         "rebuy",
         "admin_adjust"
+      ]
+    },
+    "public.round_status": {
+      "name": "round_status",
+      "schema": "public",
+      "values": [
+        "open",
+        "settled",
+        "aborted"
       ]
     },
     "public.user_role": {

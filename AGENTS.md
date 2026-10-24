@@ -173,6 +173,10 @@ folders themselves for that.
   runs as a single instance, which is plenty for closed groups; a restart
   ends the rounds in progress. Callers reach the state only through its
   service, so it can move into the database later.
+- **Open rounds are refunded on boot**: Every dealt round is recorded with a
+  status, and it ends in the same transaction as its payouts. A round still
+  open at startup was lost with the memory, so its stakes are refunded
+  before the server accepts connections.
 - **Ids are UUIDv7, amounts are integers**: Primary keys default to
   Postgres' `uuidv7()`, which sorts by creation time. Amounts are whole Bucks
   stored as `bigint`.

@@ -1,4 +1,5 @@
 CREATE TYPE "public"."ledger_reason" AS ENUM('signup_bonus', 'bet', 'backbet', 'payout', 'refund', 'daily_bonus', 'rebuy', 'admin_adjust');--> statement-breakpoint
+CREATE TYPE "public"."round_status" AS ENUM('open', 'settled', 'aborted');--> statement-breakpoint
 CREATE TYPE "public"."user_role" AS ENUM('admin', 'player');--> statement-breakpoint
 CREATE TABLE "auth_tickets" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
@@ -36,6 +37,15 @@ CREATE TABLE "ledger" (
 	CONSTRAINT "ledger_delta_not_zero" CHECK ("ledger"."delta" <> 0)
 );
 --> statement-breakpoint
+CREATE TABLE "rounds" (
+	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
+	"table_id" uuid NOT NULL,
+	"status" "round_status" DEFAULT 'open' NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"ended_at" timestamp with time zone,
+	CONSTRAINT "rounds_ended_at_matches_status" CHECK (("rounds"."status" = 'open') = ("rounds"."ended_at" is null))
+);
+--> statement-breakpoint
 CREATE TABLE "tables" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"name" text NOT NULL,
@@ -69,5 +79,7 @@ ALTER TABLE "auth_tickets" ADD CONSTRAINT "auth_tickets_user_id_users_id_fk" FOR
 ALTER TABLE "invites" ADD CONSTRAINT "invites_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "invites" ADD CONSTRAINT "invites_used_by_users_id_fk" FOREIGN KEY ("used_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "ledger" ADD CONSTRAINT "ledger_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rounds" ADD CONSTRAINT "rounds_table_id_tables_id_fk" FOREIGN KEY ("table_id") REFERENCES "public"."tables"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "auth_tickets_expires_at_idx" ON "auth_tickets" USING btree ("expires_at");--> statement-breakpoint
-CREATE INDEX "ledger_user_id_created_at_index" ON "ledger" USING btree ("user_id","created_at");
+CREATE INDEX "ledger_user_id_created_at_index" ON "ledger" USING btree ("user_id","created_at");--> statement-breakpoint
+CREATE INDEX "rounds_status_index" ON "rounds" USING btree ("status");

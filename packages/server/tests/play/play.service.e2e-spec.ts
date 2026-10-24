@@ -27,7 +27,8 @@ import { users } from '../../src/users/index.js';
 import { createPlayer, createTable } from '../../seed/factories.js';
 import { type TestApp, createTestApp } from '../utils/test-app.js';
 
-const TABLE = 'table-1';
+/** The id of a table row, which the rounds played at it refer to. */
+let TABLE = '';
 
 const TABLE_CONFIG: TableConfig = { seats: 5, minBet: 5, maxBet: 10_000 };
 
@@ -42,6 +43,7 @@ describe('PlayService', () => {
 
   beforeAll(async () => {
     app = await createTestApp();
+    TABLE = (await createTable(app)).id;
   });
 
   afterAll(async () => {

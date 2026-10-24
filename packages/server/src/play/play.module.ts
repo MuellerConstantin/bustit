@@ -10,12 +10,14 @@ import {
   PlayService,
   ROUND_RNG,
 } from './play.service.js';
+import { RoundRecoveryService } from './round-recovery.service.js';
 
 @Module({
   imports: [LedgerModule, TablesModule],
   providers: [
     PlayService,
     PlayGateway,
+    RoundRecoveryService,
     {
       provide: ROUND_RNG,
       useFactory: () => createSeededRng(randomBytes(32).toString('hex')),

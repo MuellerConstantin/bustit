@@ -18,6 +18,8 @@ export {
   type TableStateMessage,
 } from './play.gateway.js';
 export { PlayModule } from './play.module.js';
+export { rounds, type RoundStatus } from './play.schema.js';
+export { RoundRecoveryService } from './round-recovery.service.js';
 export {
   DEFAULT_PLAY_TIMINGS,
   PLAY_TIMINGS,

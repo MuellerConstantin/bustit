@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import {
   type ActionType,
   type Bet,
@@ -24,6 +23,7 @@ import {
   type OnModuleDestroy,
 } from '@nestjs/common';
 import { InjectDrizzle } from '@nestjs/drizzle';
+import { eq, sql } from 'drizzle-orm';
 import type {
   Database,
   Transaction,
@@ -42,6 +42,7 @@ import {
   TableAlreadyOpenError,
   TableNotOpenError,
 } from './play.errors.js';
+import { rounds } from './play.schema.js';
 
 /** Injection token of the generator that shuffles the shoes and deals. */
 export const ROUND_RNG = Symbol('ROUND_RNG');
@@ -501,22 +502,29 @@ export class PlayService implements OnModuleDestroy {
         { rng: this.rng },
       ),
     );
-    const roundId = randomUUID();
 
-    await this.db.transaction(async (tx) => {
+    const roundId = await this.db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(rounds)
+        .values({ tableId })
+        .returning({ id: rounds.id });
+      const { id } = created!;
+
       for (const { seat, stake } of bets) {
         await this.ledger.book(
           {
             userId: table.seats[seat]!,
             delta: -stake,
             reason: 'bet',
-            ref: roundId,
+            ref: id,
           },
           tx,
         );
       }
 
-      await this.payOut(table, update.round, roundId, tx);
+      await this.settle(table, update.round, id, tx);
+
+      return id;
     });
 
     table.bets.clear();
@@ -557,7 +565,7 @@ export class PlayService implements OnModuleDestroy {
         );
       }
 
-      await this.payOut(table, update.round, round.id, tx);
+      await this.settle(table, update.round, round.id, tx);
     });
 
     return this.store(tableId, table, round.id, update);
@@ -596,10 +604,11 @@ export class PlayService implements OnModuleDestroy {
   }
 
   /**
-   * Credits what a settled round hands back, one entry per user. Hands that
-   * lost get nothing, so a lost stake has no entry.
+   * Does nothing for a round that goes on. For a settled one it credits what
+   * the round hands back, one entry per user, and ends the round's record.
+   * Hands that lost get nothing, so a lost stake has no entry.
    */
-  private async payOut(
+  private async settle(
     table: PlayTable,
     round: RoundState,
     roundId: string,
@@ -629,6 +638,11 @@ export class PlayService implements OnModuleDestroy {
         );
       }
     }
+
+    await tx
+      .update(rounds)
+      .set({ status: 'settled', endedAt: sql`now()` })
+      .where(eq(rounds.id, roundId));
   }
 
   /**
