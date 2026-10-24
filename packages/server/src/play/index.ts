@@ -11,12 +11,7 @@ export {
   TableAlreadyOpenError,
   TableNotOpenError,
 } from './play.errors.js';
-export {
-  type PlayAck,
-  PlayGateway,
-  type RoundEventsMessage,
-  type TableStateMessage,
-} from './play.gateway.js';
+export { PlayGateway } from './play.gateway.js';
 export { PlayModule } from './play.module.js';
 export { rounds, type RoundStatus } from './play.schema.js';
 export { RoundRecoveryService } from './round-recovery.service.js';
@@ -25,7 +20,6 @@ export {
   PLAY_TIMINGS,
   PlayService,
   type PlayTimings,
-  type PublicTableState,
   ROUND_RNG,
   type TableChange,
   type TableChangeListener,

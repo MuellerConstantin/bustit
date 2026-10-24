@@ -8,7 +8,7 @@ import type {
   PlayAck,
   RoundEventsMessage,
   TableStateMessage,
-} from '../../src/play/index.js';
+} from '@bustit/shared';
 import type { User } from '../../src/users/index.js';
 import { createPlayer, createTable } from '../../seed/factories.js';
 import { type TestApp, createTestApp } from '../utils/test-app.js';
@@ -179,6 +179,7 @@ describe('play gateway (e2e)', () => {
     );
 
     expect(seen).toEqual(own);
+    expect(own.players).toEqual({ [alice.id]: alice.username });
   });
 
   it('answers the failures of a message with a code', async () => {

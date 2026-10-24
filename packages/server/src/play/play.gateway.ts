@@ -1,13 +1,16 @@
 import {
+  PLAY_EVENT,
+  type PlayAck,
   type PlayErrorCode,
   REALTIME_PATH,
+  type RoundEventsMessage,
   type TableRequest,
+  type TableStateMessage,
   actionRequestSchema,
   betRequestSchema,
   sitRequestSchema,
   tableRequestSchema,
 } from '@bustit/shared';
-import type { RoundEvent } from '@bustit/engine';
 import {
   Logger,
   type OnModuleDestroy,
@@ -38,29 +41,7 @@ import {
   SeatTakenError,
   TableNotOpenError,
 } from './play.errors.js';
-import {
-  PlayService,
-  type PublicTableState,
-  type TableChange,
-} from './play.service.js';
-
-/** What a message is answered with. */
-export type PlayAck =
-  | { readonly ok: true; readonly state?: PublicTableState }
-  | {
-      readonly ok: false;
-      readonly error: PlayErrorCode;
-      readonly message: string;
-    };
-
-/** Sent to everyone at a table after every change. */
-export type TableStateMessage = PublicTableState & { readonly tableId: string };
-
-/** Sent to everyone at a table when cards are dealt or played. */
-export type RoundEventsMessage = {
-  readonly tableId: string;
-  readonly events: readonly RoundEvent[];
-};
+import { PlayService, type TableChange } from './play.service.js';
 
 const roomOf = (tableId: string) => `table:${tableId}`;
 
@@ -78,6 +59,13 @@ export class PlayGateway
 {
   private readonly logger = new Logger(PlayGateway.name);
   private stopListening: (() => void) | null = null;
+
+  /*
+   * The names of the users who sent a message, for the state to show on
+   * their seats. A user can only sit down after a message, so every seat has
+   * a name.
+   */
+  private readonly usernames = new Map<string, string>();
 
   @WebSocketServer()
   private readonly server!: Server;
@@ -118,7 +106,7 @@ export class PlayGateway
   }
 
   /** Opens the table if needed, joins its room and answers its state. */
-  @SubscribeMessage('table:join')
+  @SubscribeMessage(PLAY_EVENT.join)
   join(
     @ConnectedSocket() socket: Socket,
     @MessageBody() body: unknown,
@@ -132,7 +120,7 @@ export class PlayGateway
         await socket.join(roomOf(tableId));
         await this.play.present(tableId, user.id);
 
-        return this.play.publicState(tableId);
+        return this.stateOf(tableId);
       },
       false,
     );
@@ -143,7 +131,7 @@ export class PlayGateway
    * the middle of a round is freed when the round is settled, its hands are
    * played with a stand.
    */
-  @SubscribeMessage('table:leave')
+  @SubscribeMessage(PLAY_EVENT.leave)
   leave(
     @ConnectedSocket() socket: Socket,
     @MessageBody() body: unknown,
@@ -159,7 +147,7 @@ export class PlayGateway
     );
   }
 
-  @SubscribeMessage('table:sit')
+  @SubscribeMessage(PLAY_EVENT.sit)
   sit(
     @ConnectedSocket() socket: Socket,
     @MessageBody() body: unknown,
@@ -175,7 +163,7 @@ export class PlayGateway
   }
 
   /** Frees the user's seat but stays at the table as a spectator. */
-  @SubscribeMessage('table:stand')
+  @SubscribeMessage(PLAY_EVENT.stand)
   stand(
     @ConnectedSocket() socket: Socket,
     @MessageBody() body: unknown,
@@ -191,7 +179,7 @@ export class PlayGateway
   }
 
   /** Places the stake for the next round. */
-  @SubscribeMessage('round:bet')
+  @SubscribeMessage(PLAY_EVENT.bet)
   bet(
     @ConnectedSocket() socket: Socket,
     @MessageBody() body: unknown,
@@ -207,7 +195,7 @@ export class PlayGateway
   }
 
   /** Deals the next round to the seats that placed a bet. */
-  @SubscribeMessage('round:deal')
+  @SubscribeMessage(PLAY_EVENT.deal)
   deal(
     @ConnectedSocket() socket: Socket,
     @MessageBody() body: unknown,
@@ -222,7 +210,7 @@ export class PlayGateway
     );
   }
 
-  @SubscribeMessage('round:action')
+  @SubscribeMessage(PLAY_EVENT.action)
   act(
     @ConnectedSocket() socket: Socket,
     @MessageBody() body: unknown,
@@ -249,7 +237,7 @@ export class PlayGateway
     task: (
       request: z.output<S>,
       user: AuthenticatedUser,
-    ) => Promise<PublicTableState | void>,
+    ) => Promise<TableStateMessage | void>,
     requireJoin = true,
   ): Promise<PlayAck> {
     const parsed = schema.safeParse(body);
@@ -264,6 +252,8 @@ export class PlayGateway
 
     const request: z.output<S> = parsed.data;
     const { user } = socket.data as RealtimeSocketData;
+
+    this.usernames.set(user.id, user.username);
 
     try {
       if (requireJoin && !socket.rooms.has(roomOf(request.tableId))) {
@@ -288,16 +278,27 @@ export class PlayGateway
     const room = this.server.to(roomOf(tableId));
 
     if (events) {
-      room.emit('round:events', {
+      room.emit(PLAY_EVENT.events, {
         tableId,
         events,
       } satisfies RoundEventsMessage);
     }
 
-    room.emit('table:state', {
-      tableId,
-      ...this.play.publicState(tableId),
-    } satisfies TableStateMessage);
+    room.emit(PLAY_EVENT.state, this.stateOf(tableId));
+  }
+
+  /** The table's public state with the names of the users on its seats. */
+  private stateOf(tableId: string): TableStateMessage {
+    const state = this.play.publicState(tableId);
+    const players: Record<string, string> = {};
+
+    for (const userId of state.seats) {
+      if (userId) {
+        players[userId] = this.usernames.get(userId) ?? userId;
+      }
+    }
+
+    return { tableId, ...state, players };
   }
 }
 

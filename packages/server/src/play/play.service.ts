@@ -2,7 +2,6 @@ import {
   type ActionType,
   type Bet,
   DEFAULT_RULES,
-  type PublicRoundState,
   type Result,
   type Rng,
   type RoundEvent,
@@ -16,6 +15,7 @@ import {
   publicView,
   startRound,
 } from '@bustit/engine';
+import type { PublicTableState } from '@bustit/shared';
 import {
   Inject,
   Injectable,
@@ -100,19 +100,6 @@ type PlayTable = {
   timer: ArmedTimer | null;
   /** The calls waiting for their turn, see `exclusive`. */
   queue: Promise<unknown>;
-};
-
-/** The table as every client may see it. */
-export type PublicTableState = {
-  readonly seats: readonly (string | null)[];
-  /** The bets placed for the next round, in seat order. */
-  readonly bets: readonly Bet[];
-  readonly round: PublicRoundState | null;
-  /**
-   * When the running timer ends, as an ISO timestamp: the betting window
-   * before a round, the turn of the seat to act during one.
-   */
-  readonly deadline: string | null;
 };
 
 /** A table changed, by a call or by one of its timers. */

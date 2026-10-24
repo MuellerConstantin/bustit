@@ -16,6 +16,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@bustit/engine": "*",
     "@bustit/shared": "*",
     "axios": "1.20.0",
     "client-only": "0.0.1",

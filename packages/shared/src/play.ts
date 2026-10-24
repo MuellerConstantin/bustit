@@ -1,3 +1,4 @@
+import type { Bet, PublicRoundState, RoundEvent } from '@bustit/engine';
 import { z } from 'zod';
 
 /*
@@ -5,6 +6,21 @@ import { z } from 'zod';
  * answers each message with an acknowledgement and tells everyone at the
  * table about the change.
  */
+
+/** The names of the messages in both directions. */
+export const PLAY_EVENT = {
+  join: 'table:join',
+  leave: 'table:leave',
+  sit: 'table:sit',
+  stand: 'table:stand',
+  bet: 'round:bet',
+  deal: 'round:deal',
+  action: 'round:action',
+  /** Sent to everyone at a table after every change. */
+  state: 'table:state',
+  /** Sent to everyone at a table when cards are dealt or played. */
+  events: 'round:events',
+} as const;
 
 export const tableRequestSchema = z.object({
   tableId: z.uuid(),
@@ -51,3 +67,37 @@ export const playErrorCodeSchema = z.enum([
 ]);
 
 export type PlayErrorCode = z.infer<typeof playErrorCodeSchema>;
+
+/** The table as every client may see it. */
+export type PublicTableState = {
+  readonly seats: readonly (string | null)[];
+  /** The bets placed for the next round, in seat order. */
+  readonly bets: readonly Bet[];
+  readonly round: PublicRoundState | null;
+  /**
+   * When the running timer ends, as an ISO timestamp: the betting window
+   * before a round, the turn of the seat to act during one.
+   */
+  readonly deadline: string | null;
+};
+
+/** A table's state with the names of the users on its seats. */
+export type TableStateMessage = PublicTableState & {
+  readonly tableId: string;
+  /** The username of every user on a seat, by user id. */
+  readonly players: Readonly<Record<string, string>>;
+};
+
+export type RoundEventsMessage = {
+  readonly tableId: string;
+  readonly events: readonly RoundEvent[];
+};
+
+/** What the server answers a message with. */
+export type PlayAck =
+  | { readonly ok: true; readonly state?: TableStateMessage }
+  | {
+      readonly ok: false;
+      readonly error: PlayErrorCode;
+      readonly message: string;
+    };
