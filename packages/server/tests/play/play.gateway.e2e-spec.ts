@@ -169,8 +169,14 @@ describe('play gateway (e2e)', () => {
 
     await send(aliceSocket, 'table:sit', { tableId: table.id, seat: 1 });
 
-    const own = await stateWhere(aliceSocket, ({ seats }) => seats[1] === alice.id);
-    const seen = await stateWhere(bobSocket, ({ seats }) => seats[1] === alice.id);
+    const own = await stateWhere(
+      aliceSocket,
+      ({ seats }) => seats[1] === alice.id,
+    );
+    const seen = await stateWhere(
+      bobSocket,
+      ({ seats }) => seats[1] === alice.id,
+    );
 
     expect(seen).toEqual(own);
   });
@@ -254,9 +260,9 @@ describe('play gateway (e2e)', () => {
 
     const events = nextMessage<RoundEventsMessage>(bobSocket, 'round:events');
 
-    expect(await send(aliceSocket, 'round:deal', { tableId: table.id })).toEqual(
-      { ok: true },
-    );
+    expect(
+      await send(aliceSocket, 'round:deal', { tableId: table.id }),
+    ).toEqual({ ok: true });
 
     let state = await stateWhere(aliceSocket, ({ round }) => round !== null);
 
@@ -269,7 +275,10 @@ describe('play gateway (e2e)', () => {
       const before = JSON.stringify(state.round);
 
       expect(
-        await send(player, 'round:action', { tableId: table.id, type: 'stand' }),
+        await send(player, 'round:action', {
+          tableId: table.id,
+          type: 'stand',
+        }),
       ).toEqual({ ok: true });
 
       state = await stateWhere(

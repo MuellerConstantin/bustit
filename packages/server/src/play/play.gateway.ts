@@ -8,7 +8,11 @@ import {
   tableRequestSchema,
 } from '@bustit/shared';
 import type { RoundEvent } from '@bustit/engine';
-import { Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import {
+  Logger,
+  type OnModuleDestroy,
+  type OnModuleInit,
+} from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,

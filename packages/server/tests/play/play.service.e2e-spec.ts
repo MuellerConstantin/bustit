@@ -385,9 +385,9 @@ describe('PlayService', () => {
         service.act(TABLE, player.id, 'stand'),
       ]);
 
-      expect(results.filter(({ status }) => status === 'fulfilled')).toHaveLength(
-        1,
-      );
+      expect(
+        results.filter(({ status }) => status === 'fulfilled'),
+      ).toHaveLength(1);
     });
   });
 
