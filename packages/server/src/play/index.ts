@@ -1,5 +1,8 @@
 export {
   AlreadySeatedError,
+  BetOutOfLimitsError,
+  InvalidSeatError,
+  NotJoinedError,
   NotSeatedError,
   RoundInProgressError,
   RoundRejectedError,
@@ -8,10 +11,16 @@ export {
   TableAlreadyOpenError,
   TableNotOpenError,
 } from './play.errors.js';
+export {
+  type PlayAck,
+  PlayGateway,
+  type RoundEventsMessage,
+  type TableStateMessage,
+} from './play.gateway.js';
 export { PlayModule } from './play.module.js';
 export {
   PlayService,
   type PublicTableState,
   ROUND_RNG,
-  SEATS_PER_TABLE,
+  type TableConfig,
 } from './play.service.js';

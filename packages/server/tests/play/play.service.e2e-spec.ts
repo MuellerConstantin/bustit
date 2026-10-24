@@ -9,21 +9,26 @@ import {
 } from '../../src/ledger/index.js';
 import {
   AlreadySeatedError,
+  BetOutOfLimitsError,
+  InvalidSeatError,
   NotSeatedError,
   PlayService,
   RoundInProgressError,
   RoundRejectedError,
-  SEATS_PER_TABLE,
   SeatEmptyError,
   SeatTakenError,
   TableAlreadyOpenError,
+  type TableConfig,
   TableNotOpenError,
 } from '../../src/play/index.js';
+import { TablesService } from '../../src/tables/index.js';
 import { users } from '../../src/users/index.js';
-import { createPlayer } from '../../seed/factories.js';
+import { createPlayer, createTable } from '../../seed/factories.js';
 import { type TestApp, createTestApp } from '../utils/test-app.js';
 
 const TABLE = 'table-1';
+
+const TABLE_CONFIG: TableConfig = { seats: 5, minBet: 5, maxBet: 10_000 };
 
 /** Every player starts with the starting balance booked as signup bonus. */
 const STARTING_BALANCE = 1000;
@@ -45,8 +50,9 @@ describe('PlayService', () => {
       createSeededRng(seed),
       app.db,
       app.get(LedgerService),
+      app.get(TablesService),
     );
-    service.openTable(TABLE);
+    service.openTable(TABLE, TABLE_CONFIG);
 
     return service;
   }
@@ -119,7 +125,8 @@ describe('PlayService', () => {
       const service = newService('tables');
 
       expect(service.publicState(TABLE)).toEqual({
-        seats: Array.from({ length: SEATS_PER_TABLE }, () => null),
+        seats: Array.from({ length: TABLE_CONFIG.seats }, () => null),
+        bets: [],
         round: null,
       });
     });
@@ -127,7 +134,27 @@ describe('PlayService', () => {
     it('rejects opening a table twice', () => {
       const service = newService('tables');
 
-      expect(() => service.openTable(TABLE)).toThrow(TableAlreadyOpenError);
+      expect(() => service.openTable(TABLE, TABLE_CONFIG)).toThrow(
+        TableAlreadyOpenError,
+      );
+    });
+
+    it('opens a created table with its seats and keeps it open', async () => {
+      const service = newService('tables');
+      const table = await createTable(app, { seats: 3 });
+
+      await service.ensureOpen(table.id);
+      await service.ensureOpen(table.id);
+
+      expect(service.publicState(table.id).seats).toHaveLength(3);
+    });
+
+    it('does not open a table that does not exist', async () => {
+      const service = newService('tables');
+
+      await expect(
+        service.ensureOpen('00000000-0000-7000-8000-000000000000'),
+      ).rejects.toThrow(TableNotOpenError);
     });
 
     it('rejects every call for a table that is not open', async () => {
@@ -191,13 +218,13 @@ describe('PlayService', () => {
       );
     });
 
-    it.each([-1, SEATS_PER_TABLE, 1.5])(
+    it.each([-1, TABLE_CONFIG.seats, 1.5])(
       'rejects the seat %s',
       async (seat) => {
         const service = newService('seats');
 
         await expect(service.sit(TABLE, seat, 'alice')).rejects.toThrow(
-          RangeError,
+          InvalidSeatError,
         );
       },
     );
@@ -248,11 +275,29 @@ describe('PlayService', () => {
       await service.sit(TABLE, 0, alice.id);
 
       await expect(
-        service.startRound(TABLE, [{ seat: 0, stake: 0 }]),
+        service.startRound(TABLE, [
+          { seat: 0, stake: 10 },
+          { seat: 0, stake: 10 },
+        ]),
       ).rejects.toThrow(RoundRejectedError);
       await expect(service.startRound(TABLE, [])).rejects.toThrow(
         RoundRejectedError,
       );
+      expect(await balanceOf(alice.id)).toBe(STARTING_BALANCE);
+    });
+
+    it('rejects stakes outside the limits of the table', async () => {
+      const service = newService('limits');
+      const alice = await createPlayer(app);
+
+      await service.sit(TABLE, 0, alice.id);
+
+      for (const stake of [TABLE_CONFIG.minBet - 1, TABLE_CONFIG.maxBet + 1]) {
+        await expect(
+          service.startRound(TABLE, [{ seat: 0, stake }]),
+        ).rejects.toThrow(BetOutOfLimitsError);
+      }
+
       expect(await balanceOf(alice.id)).toBe(STARTING_BALANCE);
     });
 
@@ -313,6 +358,104 @@ describe('PlayService', () => {
       expect(results.filter(({ status }) => status === 'fulfilled')).toHaveLength(
         1,
       );
+    });
+  });
+
+  describe('bets', () => {
+    it('keeps the placed bets in seat order and replaces an earlier one', async () => {
+      const service = newService('bets');
+
+      await service.sit(TABLE, 3, 'bob');
+      await service.sit(TABLE, 1, 'alice');
+      await service.placeBet(TABLE, 'bob', 20);
+      await service.placeBet(TABLE, 'alice', 10);
+      await service.placeBet(TABLE, 'alice', 15);
+
+      expect(service.publicState(TABLE).bets).toEqual([
+        { seat: 1, stake: 15 },
+        { seat: 3, stake: 20 },
+      ]);
+    });
+
+    it('rejects a bet outside the limits or from a user without a seat', async () => {
+      const service = newService('bets');
+
+      await service.sit(TABLE, 0, 'alice');
+
+      await expect(service.placeBet(TABLE, 'alice', 4)).rejects.toThrow(
+        BetOutOfLimitsError,
+      );
+      await expect(service.placeBet(TABLE, 'alice', 10_001)).rejects.toThrow(
+        BetOutOfLimitsError,
+      );
+      await expect(service.placeBet(TABLE, 'bob', 10)).rejects.toThrow(
+        NotSeatedError,
+      );
+    });
+
+    it('drops the bet of a user who leaves', async () => {
+      const service = newService('bets');
+
+      await service.sit(TABLE, 0, 'alice');
+      await service.placeBet(TABLE, 'alice', 10);
+      await service.leave(TABLE, 'alice');
+
+      expect(service.publicState(TABLE).bets).toEqual([]);
+    });
+
+    it('deals the placed bets, books them and clears them', async () => {
+      const service = newService('deal-bets');
+      const alice = await createPlayer(app);
+      const bob = await createPlayer(app);
+
+      await service.sit(TABLE, 0, alice.id);
+      await service.sit(TABLE, 2, bob.id);
+      await service.placeBet(TABLE, alice.id, 10);
+      await service.placeBet(TABLE, bob.id, 25);
+      await service.dealRound(TABLE, alice.id);
+
+      const state = service.publicState(TABLE);
+
+      expect(state.bets).toEqual([]);
+      expect(state.round?.seats.map(({ seat }) => seat)).toEqual([0, 2]);
+      expect(await entriesOf(alice.id, 'bet')).toMatchObject([{ delta: -10 }]);
+      expect(await entriesOf(bob.id, 'bet')).toMatchObject([{ delta: -25 }]);
+    });
+
+    it('rejects dealing without a bet or for a user without a seat', async () => {
+      const service = newService('deal-bets');
+      const alice = await createPlayer(app);
+
+      await service.sit(TABLE, 0, alice.id);
+
+      await expect(service.dealRound(TABLE, alice.id)).rejects.toThrow(
+        RoundRejectedError,
+      );
+      await expect(service.dealRound(TABLE, 'carol')).rejects.toThrow(
+        NotSeatedError,
+      );
+    });
+
+    it('drops a bet the balance does not cover so the others can be dealt', async () => {
+      const service = newService('deal-bets');
+      const alice = await createPlayer(app);
+      const bob = await createPlayer(app);
+
+      await service.sit(TABLE, 0, alice.id);
+      await service.sit(TABLE, 2, bob.id);
+      await service.placeBet(TABLE, alice.id, 10);
+      await service.placeBet(TABLE, bob.id, STARTING_BALANCE + 1);
+
+      await expect(service.dealRound(TABLE, alice.id)).rejects.toThrow(
+        InsufficientBalanceError,
+      );
+
+      expect(service.publicState(TABLE).bets).toEqual([{ seat: 0, stake: 10 }]);
+      expect(await balanceOf(alice.id)).toBe(STARTING_BALANCE);
+
+      await service.dealRound(TABLE, alice.id);
+
+      expect(service.publicState(TABLE).round?.seats).toHaveLength(1);
     });
   });
 

@@ -23,9 +23,12 @@ import type {
   Database,
   Transaction,
 } from '../infrastructure/database/index.js';
-import { LedgerService } from '../ledger/index.js';
+import { InsufficientBalanceError, LedgerService } from '../ledger/index.js';
+import { TablesService } from '../tables/index.js';
 import {
   AlreadySeatedError,
+  BetOutOfLimitsError,
+  InvalidSeatError,
   NotSeatedError,
   RoundInProgressError,
   RoundRejectedError,
@@ -35,10 +38,17 @@ import {
   TableNotOpenError,
 } from './play.errors.js';
 
-export const SEATS_PER_TABLE = 5;
-
 /** Injection token of the generator that shuffles the shoes and deals. */
 export const ROUND_RNG = Symbol('ROUND_RNG');
+
+/** What an open table is set up with. */
+export type TableConfig = {
+  readonly seats: number;
+  /** Lowest and highest stake of a bet, in whole Bucks. */
+  readonly minBet: number;
+  readonly maxBet: number;
+  readonly rules?: TableRules;
+};
 
 /** A round with the id its ledger entries refer to. */
 type ActiveRound = {
@@ -49,8 +59,12 @@ type ActiveRound = {
 /** What the server keeps per open table: who sits where, the shoe and the round. */
 type PlayTable = {
   readonly rules: TableRules;
+  readonly minBet: number;
+  readonly maxBet: number;
   /** The user on each seat, `null` for a free seat. */
   readonly seats: (string | null)[];
+  /** The stake each seat has placed for the next round. */
+  readonly bets: Map<number, number>;
   shoe: Shoe;
   round: ActiveRound | null;
   /** The calls waiting for their turn, see `exclusive`. */
@@ -60,6 +74,8 @@ type PlayTable = {
 /** The table as every client may see it. */
 export type PublicTableState = {
   readonly seats: readonly (string | null)[];
+  /** The bets placed for the next round, in seat order. */
+  readonly bets: readonly Bet[];
   readonly round: PublicRoundState | null;
 };
 
@@ -76,21 +92,47 @@ export class PlayService {
     @Inject(ROUND_RNG) private readonly rng: Rng,
     @InjectDrizzle() private readonly db: Database,
     private readonly ledger: LedgerService,
+    private readonly tablesService: TablesService,
   ) {}
 
   /** @throws TableAlreadyOpenError if the table is open already. */
-  openTable(tableId: string, rules: TableRules = DEFAULT_RULES): void {
+  openTable(
+    tableId: string,
+    { seats, minBet, maxBet, rules = DEFAULT_RULES }: TableConfig,
+  ): void {
     if (this.tables.has(tableId)) {
       throw new TableAlreadyOpenError(tableId);
     }
 
     this.tables.set(tableId, {
       rules,
-      seats: Array.from({ length: SEATS_PER_TABLE }, () => null),
+      minBet,
+      maxBet,
+      seats: Array.from({ length: seats }, () => null),
+      bets: new Map(),
       shoe: createShoe(rules, this.rng),
       round: null,
       queue: Promise.resolve(),
     });
+  }
+
+  /**
+   * Opens the table in memory with the seats and bet limits it was created
+   * with, unless it is open already.
+   *
+   * @throws TableNotOpenError if there is no open table with the id.
+   */
+  async ensureOpen(tableId: string): Promise<void> {
+    const table = await this.tablesService.findOpen(tableId);
+
+    if (!table) {
+      throw new TableNotOpenError(tableId);
+    }
+
+    // Nothing is awaited from here on, so no other call can open it first.
+    if (!this.tables.has(tableId)) {
+      this.openTable(tableId, table);
+    }
   }
 
   /**
@@ -114,7 +156,9 @@ export class PlayService {
    */
   sit(tableId: string, seat: number, userId: string): Promise<void> {
     return this.exclusive(tableId, (table) => {
-      assertSeat(seat);
+      if (!Number.isInteger(seat) || seat < 0 || seat >= table.seats.length) {
+        throw new InvalidSeatError(seat, table.seats.length);
+      }
 
       if (table.seats.includes(userId)) {
         throw new AlreadySeatedError(userId);
@@ -129,6 +173,8 @@ export class PlayService {
   }
 
   /**
+   * Frees the user's seat together with the bet placed from it.
+   *
    * @throws NotSeatedError if the user does not sit at the table.
    * @throws RoundInProgressError while the user's seat is still in a round.
    */
@@ -141,6 +187,28 @@ export class PlayService {
       }
 
       table.seats[seat] = null;
+      table.bets.delete(seat);
+    });
+  }
+
+  /**
+   * Places the stake of the user's seat for the next round, replacing an
+   * earlier one. Nothing is booked before the round is dealt.
+   *
+   * @throws NotSeatedError if the user does not sit at the table.
+   * @throws RoundInProgressError while a round is being played.
+   * @throws BetOutOfLimitsError if the stake is outside the table's limits.
+   */
+  placeBet(tableId: string, userId: string, stake: number): Promise<void> {
+    return this.exclusive(tableId, (table) => {
+      const seat = seatOf(table, userId);
+
+      if (table.round?.state.phase === 'playerTurns') {
+        throw new RoundInProgressError(tableId);
+      }
+
+      assertWithinLimits(table, stake);
+      table.bets.set(seat, stake);
     });
   }
 
@@ -151,6 +219,7 @@ export class PlayService {
    *
    * @throws SeatEmptyError if a bet is placed on a free seat.
    * @throws RoundInProgressError while a round is being played.
+   * @throws BetOutOfLimitsError if a stake is outside the table's limits.
    * @throws RoundRejectedError if the engine rejects the bets.
    * @throws InsufficientBalanceError if a balance doesn't cover its stake.
    *   Nothing is booked then and the table stays as it was.
@@ -159,42 +228,36 @@ export class PlayService {
     tableId: string,
     bets: readonly Bet[],
   ): Promise<readonly RoundEvent[]> {
+    return this.exclusive(tableId, (table) =>
+      this.start(tableId, table, bets),
+    );
+  }
+
+  /**
+   * Deals a round to the bets placed with `placeBet`, on the request of a
+   * user at the table. A bet the balance doesn't cover is dropped, so the
+   * others can be dealt again.
+   *
+   * @throws NotSeatedError if the user does not sit at the table.
+   * @throws RoundInProgressError while a round is being played.
+   * @throws RoundRejectedError if no bet is placed.
+   * @throws InsufficientBalanceError if a balance doesn't cover its stake.
+   */
+  dealRound(tableId: string, userId: string): Promise<readonly RoundEvent[]> {
     return this.exclusive(tableId, async (table) => {
-      if (table.round?.state.phase === 'playerTurns') {
-        throw new RoundInProgressError(tableId);
-      }
+      seatOf(table, userId);
 
-      for (const { seat } of bets) {
-        if (!table.seats[seat]) {
-          throw new SeatEmptyError(seat);
-        }
-      }
+      const bets = [...table.bets].map(([seat, stake]) => ({ seat, stake }));
 
-      const update = unwrap(
-        startRound(
-          { rules: table.rules, shoe: table.shoe, bets },
-          { rng: this.rng },
-        ),
-      );
-      const roundId = randomUUID();
-
-      await this.db.transaction(async (tx) => {
-        for (const { seat, stake } of bets) {
-          await this.ledger.book(
-            {
-              userId: table.seats[seat]!,
-              delta: -stake,
-              reason: 'bet',
-              ref: roundId,
-            },
-            tx,
-          );
+      try {
+        return await this.start(tableId, table, bets);
+      } catch (error) {
+        if (error instanceof InsufficientBalanceError) {
+          table.bets.delete(table.seats.indexOf(error.userId));
         }
 
-        await this.payOut(table, update.round, roundId, tx);
-      });
-
-      return store(table, roundId, update);
+        throw error;
+      }
     });
   }
 
@@ -253,6 +316,9 @@ export class PlayService {
 
     return {
       seats: [...table.seats],
+      bets: [...table.bets]
+        .map(([seat, stake]) => ({ seat, stake }))
+        .sort((a, b) => a.seat - b.seat),
       round: table.round ? publicView(table.round.state) : null,
     };
   }
@@ -293,6 +359,52 @@ export class PlayService {
     );
 
     return await run;
+  }
+
+  private async start(
+    tableId: string,
+    table: PlayTable,
+    bets: readonly Bet[],
+  ): Promise<readonly RoundEvent[]> {
+    if (table.round?.state.phase === 'playerTurns') {
+      throw new RoundInProgressError(tableId);
+    }
+
+    for (const { seat, stake } of bets) {
+      if (!table.seats[seat]) {
+        throw new SeatEmptyError(seat);
+      }
+
+      assertWithinLimits(table, stake);
+    }
+
+    const update = unwrap(
+      startRound(
+        { rules: table.rules, shoe: table.shoe, bets },
+        { rng: this.rng },
+      ),
+    );
+    const roundId = randomUUID();
+
+    await this.db.transaction(async (tx) => {
+      for (const { seat, stake } of bets) {
+        await this.ledger.book(
+          {
+            userId: table.seats[seat]!,
+            delta: -stake,
+            reason: 'bet',
+            ref: roundId,
+          },
+          tx,
+        );
+      }
+
+      await this.payOut(table, update.round, roundId, tx);
+    });
+
+    table.bets.clear();
+
+    return store(table, roundId, update);
   }
 
   /**
@@ -342,6 +454,15 @@ function seatOf(table: PlayTable, userId: string): number {
   return seat;
 }
 
+function assertWithinLimits(
+  { minBet, maxBet }: PlayTable,
+  stake: number,
+): void {
+  if (!Number.isInteger(stake) || stake < minBet || stake > maxBet) {
+    throw new BetOutOfLimitsError(stake, minBet, maxBet);
+  }
+}
+
 function unwrap(result: Result<RoundUpdate>): RoundUpdate {
   if (!result.ok) {
     throw new RoundRejectedError(result.error.code, result.error.message);
@@ -360,12 +481,4 @@ function store(
   table.shoe = round.shoe;
 
   return events;
-}
-
-function assertSeat(seat: number): void {
-  if (!Number.isInteger(seat) || seat < 0 || seat >= SEATS_PER_TABLE) {
-    throw new RangeError(
-      `seat must be an integer in [0, ${SEATS_PER_TABLE}), got ${seat}`,
-    );
-  }
 }
