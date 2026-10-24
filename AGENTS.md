@@ -168,6 +168,11 @@ folders themselves for that.
   pattern.
 - **Columns come with the feature that needs them**: Tables start with what
   their first feature uses and grow through further migrations.
+- **Table state lives in the server's memory, one instance**: The seats and
+  the current round of an open table are held in process memory. The server
+  runs as a single instance, which is plenty for closed groups; a restart
+  ends the rounds in progress. Callers reach the state only through its
+  service, so it can move into the database later.
 - **Ids are UUIDv7, amounts are integers**: Primary keys default to
   Postgres' `uuidv7()`, which sorts by creation time. Amounts are whole Bucks
   stored as `bigint`.
