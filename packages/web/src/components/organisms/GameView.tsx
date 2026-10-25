@@ -4,6 +4,7 @@ import { availableActions } from '@bustit/engine';
 import { Maximize, Minimize } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { Badge } from '@/components/atoms/Badge';
 import { Bill } from '@/components/atoms/Bill';
 import { Button } from '@/components/atoms/Button';
 import { Skeleton } from '@/components/atoms/Skeleton';
@@ -190,6 +191,9 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
           <Bill />
           <span className="sr-only">{t('balance')}</span>
           {format.number(user.balance)}
+          <Badge variant={mySeat === -1 ? 'neutral' : 'primary'}>
+            {t(mySeat === -1 ? 'spectator' : 'player')}
+          </Badge>
         </p>
       )}
       {status !== 'connected' && (

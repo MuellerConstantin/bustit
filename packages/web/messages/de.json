@@ -366,7 +366,6 @@
       "betLabel": "Einsatz"
     },
     "playControls": {
-      "spectator": "Du schaust zu. Setz dich auf einen freien Platz, um mitzuspielen.",
       "actionsLabel": "Aktionen",
       "actions": {
         "hit": "Hit",
@@ -391,6 +390,8 @@
     "gameView": {
       "table": "Spieltisch",
       "balance": "Guthaben",
+      "player": "Spieler",
+      "spectator": "Zuschauer",
       "fullscreen": "Vollbild",
       "exitFullscreen": "Vollbild beenden",
       "connecting": "Verbindung wird aufgebaut …",

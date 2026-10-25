@@ -366,7 +366,6 @@
       "betLabel": "Bet"
     },
     "playControls": {
-      "spectator": "You are watching. Take a free seat to play.",
       "actionsLabel": "Actions",
       "actions": {
         "hit": "Hit",
@@ -391,6 +390,8 @@
     "gameView": {
       "table": "Game table",
       "balance": "Balance",
+      "player": "Player",
+      "spectator": "Spectator",
       "fullscreen": "Fullscreen",
       "exitFullscreen": "Exit fullscreen",
       "connecting": "Connecting …",

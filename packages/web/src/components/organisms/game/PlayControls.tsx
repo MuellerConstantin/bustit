@@ -72,7 +72,7 @@ export function PlayControls({
   const [stake, setStake] = useState(bet ?? minBet);
 
   if (!isSeated) {
-    return <p className="text-sm text-muted-foreground">{t('spectator')}</p>;
+    return null;
   }
 
   if (isRoundRunning) {
