@@ -385,6 +385,7 @@
     },
     "gameView": {
       "table": "Spieltisch",
+      "balance": "Guthaben",
       "fullscreen": "Vollbild",
       "exitFullscreen": "Vollbild beenden",
       "connecting": "Verbindung wird aufgebaut …",

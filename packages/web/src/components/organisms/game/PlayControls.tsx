@@ -33,6 +33,8 @@ interface PlayControlsProps {
   hasBets: boolean;
   minBet: number;
   maxBet: number;
+  /** What the user has to bet with, `undefined` while it is not known yet. */
+  balance?: number;
   /** Blocks the controls while a message is on its way. */
   isPending: boolean;
   onBet: (stake: number) => void;
@@ -58,6 +60,7 @@ export function PlayControls({
   hasBets,
   minBet,
   maxBet,
+  balance,
   isPending,
   onBet,
   onDeal,
@@ -113,6 +116,8 @@ export function PlayControls({
             label={format.number(value, { notation: 'compact' })}
             tone={chipTone(index)}
             aria-label={t('addToStake', { value })}
+            // A chip the balance can't cover is locked, not just left out.
+            isLocked={balance !== undefined && stake + value > balance}
             isDisabled={isPending || stake >= maxBet}
             onPress={() =>
               setStake((current) => Math.min(maxBet, current + value))
@@ -138,7 +143,11 @@ export function PlayControls({
       <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
         <Button
           variant="table-primary"
-          isDisabled={isPending || bet === stake}
+          isDisabled={
+            isPending ||
+            bet === stake ||
+            (balance !== undefined && stake > balance)
+          }
           onPress={() => onBet(stake)}
         >
           {bet === undefined ? t('placeBet') : t('changeBet')}

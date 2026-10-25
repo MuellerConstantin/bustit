@@ -3,10 +3,19 @@ import 'server-only';
 import {
   type BocUserPage,
   type ListUsersQuery,
+  type OwnUser,
   bocUserPageSchema,
+  ownUserSchema,
 } from '@bustit/shared';
 import { HttpStatusCode, isAxiosError } from 'axios';
 import { api, bearer } from './client';
+
+/** The logged-in user's own profile, with their current balance. */
+export async function getOwnUser(accessToken: string): Promise<OwnUser> {
+  const { data } = await api.get<unknown>('/me', bearer(accessToken));
+
+  return ownUserSchema.parse(data);
+}
 
 /** One page of the users, newest first. Only admins may list them. */
 export async function listUsers(

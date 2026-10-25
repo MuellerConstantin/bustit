@@ -15,4 +15,9 @@ export {
   listBocTables,
   listTables,
 } from './tables';
-export { type DeleteUserOutcome, deleteUser, listUsers } from './users';
+export {
+  type DeleteUserOutcome,
+  deleteUser,
+  getOwnUser,
+  listUsers,
+} from './users';

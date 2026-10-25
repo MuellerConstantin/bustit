@@ -27,6 +27,8 @@ interface BetChipProps extends Omit<RACButtonProps, 'children'> {
   /** The amount the chip stands for, shown on its face. */
   label: string;
   tone: BetChipTone;
+  /** Whether the chip is out of reach, e.g. for a balance that doesn't cover it. It shows as struck through. */
+  isLocked?: boolean;
 }
 
 /* The rim is the logo's green chip, so the other tones turn its hue. */
@@ -50,22 +52,41 @@ const chip = tv({
     isDisabled: {
       true: 'cursor-default opacity-40 hover:translate-y-0',
     },
+    // A locked chip stays visible, so only its colour is taken away.
+    isLocked: {
+      true: 'cursor-not-allowed hover:translate-y-0',
+    },
   },
 });
 
 /** A chip of a bet picker. The amount has to be spoken by the button's `aria-label`. */
-export function BetChip({ label, tone, className, ...props }: BetChipProps) {
+export function BetChip({
+  label,
+  tone,
+  isLocked = false,
+  isDisabled = false,
+  className,
+  ...props
+}: BetChipProps) {
   return (
     <RACButton
       {...props}
+      isDisabled={isDisabled || isLocked}
       className={(renderProps) =>
         chip({
-          isDisabled: renderProps.isDisabled,
+          isDisabled: renderProps.isDisabled && !isLocked,
+          isLocked,
           className: typeof className === 'string' ? className : undefined,
         })
       }
     >
-      <span aria-hidden className={rim({ tone })} />
+      <span aria-hidden className={rim({ tone: isLocked ? 'black' : tone })} />
+      {isLocked && (
+        <span
+          aria-hidden
+          className="absolute inset-x-[-0.25rem] top-1/2 z-10 h-1 -rotate-45 rounded-full bg-destructive ring-2 ring-background"
+        />
+      )}
       <span
         aria-hidden
         className="relative flex size-[70%] items-center justify-center rounded-full bg-background/90 text-xs font-semibold tabular-nums"

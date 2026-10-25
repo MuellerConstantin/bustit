@@ -385,6 +385,7 @@
     },
     "gameView": {
       "table": "Game table",
+      "balance": "Balance",
       "fullscreen": "Fullscreen",
       "exitFullscreen": "Exit fullscreen",
       "connecting": "Connecting …",

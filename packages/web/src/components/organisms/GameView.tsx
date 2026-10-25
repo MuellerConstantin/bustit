@@ -2,8 +2,9 @@
 
 import { availableActions } from '@bustit/engine';
 import { Maximize, Minimize } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { Bill } from '@/components/atoms/Bill';
 import { Button } from '@/components/atoms/Button';
 import { Skeleton } from '@/components/atoms/Skeleton';
 import { DealerHand } from '@/components/molecules/game/DealerHand';
@@ -17,6 +18,7 @@ import {
 import { PlayControls } from '@/components/organisms/game/PlayControls';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useOwnUser } from '@/hooks/useOwnUser';
 import { useTablePlay } from '@/hooks/useTablePlay';
 import { useTimerProgress } from '@/hooks/useTimerProgress';
 import { type Verdict, verdictOf } from '@/lib/verdict';
@@ -61,6 +63,19 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
   const isWide = useMediaQuery(FIT_MEDIA_QUERY);
   const [fitHeight, setFitHeight] = useState<number | null>(null);
   const hasState = state !== null;
+  const format = useFormatter();
+  const { user, reload: reloadUser } = useOwnUser();
+  const roundPhase = state?.round?.phase ?? null;
+  const placedStakes =
+    state?.bets.reduce((sum, placed) => sum + placed.stake, 0) ?? 0;
+
+  /*
+   * The balance isn't part of the table's state. Placing bets and settling a
+   * round are what move it, so it is asked for again whenever either changes.
+   */
+  useEffect(() => {
+    void reloadUser();
+  }, [roundPhase, placedStakes, reloadUser]);
 
   /*
    * The game takes the height between its top and the window's bottom, so the
@@ -162,6 +177,19 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
       >
         {isFocused ? <Minimize /> : <Maximize />}
       </Button>
+      {user && (
+        <p
+          className={
+            isFocused
+              ? 'absolute top-3 left-3 flex h-9 items-center gap-2 font-display text-2xl tabular-nums'
+              : 'absolute top-0 left-0 flex h-9 items-center gap-2 font-display text-2xl tabular-nums'
+          }
+        >
+          <Bill />
+          <span className="sr-only">{t('balance')}</span>
+          {format.number(user.balance)}
+        </p>
+      )}
       {status !== 'connected' && (
         <p role="status" className="shrink-0 text-sm text-muted-foreground">
           {t('disconnected')}
@@ -226,6 +254,7 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
           hasBets={state.bets.length > 0}
           minBet={minBet}
           maxBet={maxBet}
+          balance={user?.balance}
           isPending={isPending}
           onBet={(stake) => void run(() => bet(stake))}
           onDeal={() => void run(deal)}
