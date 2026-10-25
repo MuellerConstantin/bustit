@@ -13,7 +13,8 @@
     "packages/engine",
     "packages/shared",
     "packages/server",
-    "packages/web"
+    "packages/web",
+    "packages/bot"
   ],
   "engines": {
     "node": ">=24",
