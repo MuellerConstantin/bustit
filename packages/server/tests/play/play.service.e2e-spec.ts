@@ -41,6 +41,7 @@ const QUIET: PlayTimings = {
   turnMs: 60_000,
   resultMs: 60_000,
   actionPauseMs: 0,
+  dealerStepMs: 0,
   reconnectMs: 60_000,
 };
 
@@ -117,6 +118,11 @@ describe('PlayService', () => {
       const { seat } = state.round.turn!;
       await service.act(TABLE, state.seats[seat]!, 'stand');
     }
+
+    // The dealer plays on its own timer after the last decision.
+    await eventually(
+      () => service.publicState(TABLE).round?.phase === 'settled',
+    );
   }
 
   /** Waits until the condition holds, for things the timers do on their own. */
@@ -435,6 +441,49 @@ describe('PlayService', () => {
       expect(service.publicState(TABLE).round).toBeNull();
     });
 
+    it('plays the dealer step by step on its own timer', async () => {
+      const { service } = await roundInPlay(10, {
+        ...QUIET,
+        dealerStepMs: 100,
+      });
+      const dealerChanges: string[][] = [];
+
+      service.onChange(({ events }) => {
+        const dealerEvents = (events ?? [])
+          .map(({ type }) => type)
+          .filter((type) =>
+            ['holeCardRevealed', 'dealerCard', 'settled'].includes(type),
+          );
+
+        if (dealerEvents.length > 0) {
+          dealerChanges.push(dealerEvents);
+        }
+      });
+
+      for (
+        let state = service.publicState(TABLE);
+        state.round?.phase === 'playerTurns';
+        state = service.publicState(TABLE)
+      ) {
+        const { seat } = state.round.turn!;
+        await service.act(TABLE, state.seats[seat]!, 'stand');
+      }
+
+      const waiting = service.publicState(TABLE);
+
+      expect(waiting.round?.phase).toBe('dealerTurn');
+      expect(waiting.deadline).not.toBeNull();
+      expect(waiting.actionableAt).toBeNull();
+
+      await eventually(
+        () => service.publicState(TABLE).round?.phase === 'settled',
+      );
+
+      // Every dealer step is a change of its own, the last one settles.
+      expect(dealerChanges.every((change) => change.length === 1)).toBe(true);
+      expect(dealerChanges.at(-1)).toEqual(['settled']);
+    });
+
     it('rejects an action until the pause of its turn is over', async () => {
       const { service, alice, bob } = await roundInPlay(10, {
         ...QUIET,
@@ -576,6 +625,7 @@ describe('PlayService', () => {
       turnMs: 300,
       resultMs: 100,
       actionPauseMs: 0,
+      dealerStepMs: 0,
       reconnectMs: 60_000,
     };
 
@@ -718,6 +768,7 @@ describe('PlayService', () => {
         turnMs: 400,
         resultMs: 60_000,
         actionPauseMs: 0,
+        dealerStepMs: 0,
         reconnectMs: 60_000,
       });
       const { seat } = service.publicState(TABLE).round!.turn!;
@@ -740,6 +791,7 @@ describe('PlayService', () => {
         turnMs: 60_000,
         resultMs: 100,
         actionPauseMs: 0,
+        dealerStepMs: 0,
         reconnectMs: 60_000,
       });
       const alice = await createPlayer(app);
@@ -760,6 +812,7 @@ describe('PlayService', () => {
         turnMs: 60_000,
         resultMs: 100,
         actionPauseMs: 0,
+        dealerStepMs: 0,
         reconnectMs: 0,
       });
       const alice = await createPlayer(app);
@@ -814,6 +867,7 @@ describe('PlayService', () => {
         turnMs: 60_000,
         resultMs: 100,
         actionPauseMs: 0,
+        dealerStepMs: 0,
         reconnectMs: 0,
       });
 

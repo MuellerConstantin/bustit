@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { type Card, type Shoe, createShoe } from '../../src/cards/index.js';
 import { type Rng, createSeededRng } from '../../src/rng.js';
 import { applyAction } from '../../src/round/apply.js';
+import { dealerStep } from '../../src/round/finish.js';
 import { availableActions, publicView } from '../../src/round/queries.js';
 import { startRound } from '../../src/round/start.js';
 import type {
@@ -100,6 +101,15 @@ function playRandomRound(rules: TableRules, shoe: Shoe, rng: Rng): Shoe {
     replay(mirror, update.events);
     events.push(...update.events);
     round = update.round;
+    expectMirrorMatches(mirror, round);
+  }
+
+  while (round.phase === 'dealerTurn') {
+    const step = unwrap(dealerStep(round, { rng }));
+
+    replay(mirror, step.events);
+    events.push(...step.events);
+    round = step.round;
     expectMirrorMatches(mirror, round);
   }
 
@@ -235,6 +245,9 @@ function replay(mirror: Mirror, events: readonly RoundEvent[]): void {
         break;
       case 'turn':
         mirror.turn = { seat: event.seat, hand: event.hand };
+        break;
+      case 'dealerTurn':
+        mirror.turn = null;
         break;
       case 'settled':
         mirror.turn = null;

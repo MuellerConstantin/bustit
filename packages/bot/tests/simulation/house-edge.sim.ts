@@ -6,6 +6,7 @@ import {
   availableActions,
   createSeededRng,
   createShoe,
+  dealerStep,
   startRound,
 } from '@bustit/engine';
 import { describe, expect, it } from 'vitest';
@@ -66,6 +67,10 @@ function simulateHouseEdge(rules: TableRules, seed: string): number {
 
       round = unwrap(applyAction(round, { seat: 0, type }, { rng })).round;
       available = availableActions(round);
+    }
+
+    while (round.phase === 'dealerTurn') {
+      round = unwrap(dealerStep(round, { rng })).round;
     }
 
     for (const result of round.results) {

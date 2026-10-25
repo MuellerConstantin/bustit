@@ -58,7 +58,9 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
 
   const { round } = state;
   const mySeat = userId ? state.seats.indexOf(userId) : -1;
-  const runningRound = round?.phase === 'playerTurns' ? round : null;
+  const runningRound = round && round.phase !== 'settled' ? round : null;
+  // Bets are taken only once the last round's result has left the table.
+  const bettingOpen = round === null;
   const turn = runningRound?.turn ?? null;
   const actions = runningRound
     ? (availableActions(runningRound)?.actions ?? [])
@@ -95,11 +97,13 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
             ? t('yourTurn')
             : turnUserId
               ? t('turnOf', { name: state.players[turnUserId] ?? '' })
-              : round?.phase === 'settled' && state.bets.length === 0
-                ? t('roundOver')
-                : state.bets.length > 0
-                  ? t('dealing')
-                  : t('placeBets')}
+              : round?.phase === 'dealerTurn'
+                ? t('dealerTurn')
+                : round?.phase === 'settled'
+                  ? t('roundOver')
+                  : state.bets.length > 0
+                    ? t('dealing')
+                    : t('placeBets')}
           {secondsLeft !== null && (
             <span className="ml-2 tabular-nums">
               {t('seconds', { seconds: secondsLeft })}
@@ -108,7 +112,7 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
         </p>
         <PlayControls
           isSeated={mySeat !== -1}
-          isRoundRunning={runningRound !== null}
+          isRoundRunning={!bettingOpen}
           isMyTurn={isMyTurn}
           actions={actions}
           bet={state.bets.find((placed) => placed.seat === mySeat)?.stake}

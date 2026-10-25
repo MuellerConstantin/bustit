@@ -12,6 +12,7 @@ import {
   applyAction,
   availableActions,
   createShoe,
+  dealerStep,
   publicView,
   startRound,
 } from '@bustit/engine';
@@ -71,6 +72,8 @@ export type PlayTimings = {
    * use the pause to show what happened before the next action.
    */
   readonly actionPauseMs: number;
+  /** How long the dealer waits before each step of its turn. */
+  readonly dealerStepMs: number;
   /**
    * How long the seat of a user whose connection dropped is kept for them to
    * come back. It is given up when a betting window ends after that.
@@ -83,6 +86,7 @@ export const DEFAULT_PLAY_TIMINGS: PlayTimings = {
   turnMs: 20_000,
   resultMs: 10_000,
   actionPauseMs: 1_500,
+  dealerStepMs: 1_000,
   reconnectMs: 15_000,
 };
 
@@ -106,7 +110,7 @@ type ActiveRound = {
 
 /** The one timer a table has running: the result hold, the betting window or a seat's turn. */
 type ArmedTimer = {
-  readonly kind: 'bet' | 'turn' | 'result';
+  readonly kind: 'bet' | 'turn' | 'result' | 'dealer';
   readonly endsAt: number;
   readonly handle: NodeJS.Timeout;
 };
@@ -231,7 +235,7 @@ export class PlayService implements OnModuleDestroy {
    */
   closeTable(tableId: string): Promise<void> {
     return this.exclusive(tableId, (table) => {
-      if (table.round?.state.phase === 'playerTurns') {
+      if (inPlay(table)) {
         throw new RoundInProgressError(tableId);
       }
 
@@ -291,14 +295,14 @@ export class PlayService implements OnModuleDestroy {
     return this.exclusive(tableId, (table) => {
       const seat = seatOf(table, userId);
 
-      if (table.round?.state.phase !== 'playerTurns') {
+      if (!inPlay(table)) {
         this.free(tableId, table, seat);
         return;
       }
 
       table.leaving.add(userId);
 
-      if (table.round.state.turn?.seat === seat) {
+      if (table.round?.state.turn?.seat === seat) {
         this.armTurn(tableId, table);
       }
     });
@@ -338,7 +342,7 @@ export class PlayService implements OnModuleDestroy {
     return this.exclusive(tableId, (table) => {
       const seat = seatOf(table, userId);
 
-      if (table.round?.state.phase === 'playerTurns') {
+      if (inPlay(table)) {
         throw new RoundInProgressError(tableId);
       }
 
@@ -531,7 +535,7 @@ export class PlayService implements OnModuleDestroy {
     table: PlayTable,
     bets: readonly Bet[],
   ): Promise<readonly RoundEvent[]> {
-    if (table.round?.state.phase === 'playerTurns') {
+    if (inPlay(table)) {
       throw new RoundInProgressError(tableId);
     }
 
@@ -647,6 +651,8 @@ export class PlayService implements OnModuleDestroy {
       // A window that was running when the round was dealt is over.
       clearTimer(table);
       this.armResult(tableId, table);
+    } else if (round.phase === 'dealerTurn') {
+      this.armDealer(tableId, table);
     } else {
       this.armTurn(tableId, table);
     }
@@ -769,7 +775,7 @@ export class PlayService implements OnModuleDestroy {
    * still shown, the result timer decides when the window opens.
    */
   private armBet(tableId: string, table: PlayTable): void {
-    if (table.round?.state.phase === 'playerTurns') {
+    if (inPlay(table)) {
       return;
     }
 
@@ -821,6 +827,8 @@ export class PlayService implements OnModuleDestroy {
 
       if (timer.kind === 'turn') {
         await this.standForTurn(tableId, table);
+      } else if (timer.kind === 'dealer') {
+        this.emit(tableId, await this.stepDealer(tableId, table));
       } else if (timer.kind === 'result') {
         this.openBettingWindow(tableId, table);
       } else {
@@ -832,6 +840,38 @@ export class PlayService implements OnModuleDestroy {
         error instanceof Error ? error.stack : String(error),
       );
     });
+  }
+
+  /**
+   * Gives the dealer its time between two steps. No seat acts meanwhile, so
+   * the pause before an action doesn't apply here.
+   */
+  private armDealer(tableId: string, table: PlayTable): void {
+    table.actionableAt = null;
+    this.arm(tableId, table, 'dealer', this.timings.dealerStepMs);
+  }
+
+  /**
+   * Plays the next step of the dealer's turn. The step that settles the round
+   * books the payouts, as an action does.
+   */
+  private async stepDealer(
+    tableId: string,
+    table: PlayTable,
+  ): Promise<readonly RoundEvent[]> {
+    const { round } = table;
+
+    if (!round) {
+      throw new RoundRejectedError('ROUND_FINISHED', 'No round is in progress');
+    }
+
+    const update = unwrap(dealerStep(round.state, { rng: this.rng }));
+
+    await this.db.transaction((tx) =>
+      this.settle(table, update.round, round.id, tx),
+    );
+
+    return this.store(tableId, table, round.id, update);
   }
 
   /** Clears the result that was shown and starts the next betting window. */
@@ -907,6 +947,11 @@ function clearTimer(table: PlayTable): void {
  * until the first bet for the next one, the end of the betting window after
  * it or until nobody sits at the table anymore.
  */
+/** Whether players or the dealer are still at work in the round. */
+function inPlay(table: PlayTable): boolean {
+  return table.round !== null && table.round.state.phase !== 'settled';
+}
+
 function clearSettled(table: PlayTable): void {
   if (table.round?.state.phase === 'settled') {
     table.round = null;

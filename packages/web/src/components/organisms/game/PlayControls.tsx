@@ -10,7 +10,10 @@ import { NumberField } from '@/components/atoms/NumberField';
 interface PlayControlsProps {
   /** Whether the user sits at the table. */
   isSeated: boolean;
-  /** Whether a round is being played, as opposed to waiting for bets. */
+  /**
+   * Whether a round is being played or its result is still shown, as opposed
+   * to taking bets.
+   */
   isRoundRunning: boolean;
   isMyTurn: boolean;
   /** What the hand to act may do, empty unless it is the user's turn. */

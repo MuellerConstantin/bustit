@@ -1,6 +1,7 @@
 import type { Card, Rank, Shoe } from '../../src/cards/index.js';
 import { createSeededRng } from '../../src/rng.js';
 import { applyAction } from '../../src/round/apply.js';
+import { dealerStep } from '../../src/round/finish.js';
 import { startRound } from '../../src/round/start.js';
 import type {
   ActionType,
@@ -58,6 +59,22 @@ export function unwrap<T>(result: Result<T>): T {
   return result.value;
 }
 
+/*
+ * Plays the dealer's turn to its end, so tests see a settled round unless they
+ * test the dealer's steps themselves.
+ */
+export function finishDealer(update: RoundUpdate): RoundUpdate {
+  let { round, events } = update;
+
+  while (round.phase === 'dealerTurn') {
+    const step = unwrap(dealerStep(round, context));
+    round = step.round;
+    events = [...events, ...step.events];
+  }
+
+  return { round, events };
+}
+
 export function start(
   deal: StackedDeal,
   rules: Partial<TableRules> = {},
@@ -65,14 +82,16 @@ export function start(
 ): RoundUpdate {
   const bets: Bet[] = stakes.map((stake, seat) => ({ seat, stake }));
 
-  return unwrap(
-    startRound(
-      {
-        rules: { ...DEFAULT_RULES, ...rules },
-        shoe: stackedShoe(deal),
-        bets,
-      },
-      context,
+  return finishDealer(
+    unwrap(
+      startRound(
+        {
+          rules: { ...DEFAULT_RULES, ...rules },
+          shoe: stackedShoe(deal),
+          bets,
+        },
+        context,
+      ),
     ),
   );
 }
@@ -83,7 +102,9 @@ export function act(round: RoundState, type: ActionType): RoundUpdate {
     throw new Error('No hand is left to act');
   }
 
-  return unwrap(applyAction(round, { seat: round.turn.seat, type }, context));
+  return finishDealer(
+    unwrap(applyAction(round, { seat: round.turn.seat, type }, context)),
+  );
 }
 
 /** Applies the actions in order, each for the seat whose turn it is. */

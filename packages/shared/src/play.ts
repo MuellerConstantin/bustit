@@ -80,7 +80,7 @@ export type PublicTableState = {
   /**
    * When the running timer ends, as an ISO timestamp: the result hold of a
    * settled round, the betting window before a round, the turn of the seat to
-   * act during one.
+   * act during one, or the next step of the dealer.
    */
   readonly deadline: string | null;
   /**

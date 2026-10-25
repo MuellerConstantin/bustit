@@ -42,7 +42,11 @@ export type HandResult = HandRef & {
   readonly payout: number;
 };
 
-export type RoundPhase = 'playerTurns' | 'settled';
+/**
+ * `dealerTurn` lasts from the last player decision until the round is
+ * settled, and the dealer plays it one step per call of `dealerStep`.
+ */
+export type RoundPhase = 'playerTurns' | 'dealerTurn' | 'settled';
 
 export type RoundState = {
   readonly phase: RoundPhase;
@@ -109,6 +113,8 @@ export type RoundEvent =
       readonly status: FinishedHandStatus;
     })
   | (HandRef & { readonly type: 'turn' })
+  /** No hand is left to play, the dealer's turn begins. */
+  | { readonly type: 'dealerTurn' }
   | { readonly type: 'settled'; readonly results: readonly HandResult[] };
 
 export type RoundContext = {
@@ -121,7 +127,11 @@ export type RoundUpdate = {
 };
 
 export type EngineErrorCode =
-  'INVALID_BETS' | 'NOT_YOUR_TURN' | 'ACTION_NOT_ALLOWED' | 'ROUND_FINISHED';
+  | 'INVALID_BETS'
+  | 'NOT_YOUR_TURN'
+  | 'ACTION_NOT_ALLOWED'
+  | 'ROUND_FINISHED'
+  | 'DEALER_TURN';
 
 export type EngineError = {
   readonly code: EngineErrorCode;

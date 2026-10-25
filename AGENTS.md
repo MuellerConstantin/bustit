@@ -82,11 +82,14 @@ folders themselves for that.
 - **Backbets settle outside the engine**: A backbet has no influence on the
   game. The server settles it with the engine's payout rule, the outcome of
   the seat's first hand and the backbet's own flat stake.
-- **Rounds advance by decisions**: Starting a round and applying an action
-  run on until the next player decision, including dealing, a split hand's
-  second card, the dealer's play and the settlement. A timed-out player is
-  sent a stand. Each call returns a new round and the events of what
-  happened, in order.
+- **Rounds advance in steps the server paces**: Starting a round and
+  applying an action run on until the next player decision, including
+  dealing and a split hand's second card. Once no hand is left, the dealer
+  plays one step per call, the last one settles the round. Each call returns
+  a new round and the events of what happened, in order, so the server can
+  give clients time between steps with its timers: a pause before every
+  player action, a delay between dealer steps and a hold of the result. A
+  timed-out player is sent a stand.
 - **Immutable rounds as plain JSON**: Every call returns a new round and
   never changes the one passed in. Internally a call works on a mutable
   draft. The round holds no classes and no RNG, so it can be stored, logged

@@ -31,6 +31,10 @@ export function applyAction(
 ): Result<RoundUpdate> {
   const { turn } = round;
 
+  if (round.phase === 'dealerTurn') {
+    return failure('DEALER_TURN', 'The dealer is still playing');
+  }
+
   if (round.phase === 'settled' || !turn) {
     return failure('ROUND_FINISHED', 'The round is already settled');
   }

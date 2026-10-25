@@ -64,6 +64,7 @@ describe('RoundRecoveryService', () => {
           turnMs: 60_000,
           resultMs: 60_000,
           actionPauseMs: 0,
+          dealerStepMs: 0,
           reconnectMs: 60_000,
         },
       );
@@ -96,6 +97,15 @@ describe('RoundRecoveryService', () => {
       state = service.publicState(tableId)
     ) {
       await service.act(tableId, state.seats[state.round.turn!.seat]!, 'stand');
+    }
+
+    // The dealer plays on its own timer after the last decision.
+    for (
+      let state = service.publicState(tableId);
+      state.round?.phase !== 'settled';
+      state = service.publicState(tableId)
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
     }
   }
 

@@ -21,7 +21,9 @@ describe('play gateway (e2e)', () => {
   const latestState = new Map<Socket, TableStateMessage>();
 
   beforeAll(async () => {
-    app = await createTestApp({ playTimings: { actionPauseMs: 0 } });
+    app = await createTestApp({
+      playTimings: { actionPauseMs: 0, dealerStepMs: 0 },
+    });
 
     const server = app.http as Server;
     await new Promise<void>((resolve) => server.listen(0, resolve));
@@ -312,7 +314,12 @@ describe('play gateway (e2e)', () => {
       );
     }
 
-    expect(state.round?.phase).toBe('settled');
+    // The dealer plays its steps on its own, the last one settles the round.
+    state = await stateWhere(
+      aliceSocket,
+      ({ round }) => round?.phase === 'settled',
+    );
+
     expect(state.round).not.toHaveProperty('shoe');
   });
 });

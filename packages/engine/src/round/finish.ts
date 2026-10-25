@@ -6,16 +6,26 @@ import {
   dealToDealer,
   getHand,
   hitHand,
+  toDraft,
   toRound,
 } from './draft.js';
-import type { Hand, HandResult, RoundUpdate } from './types.js';
+import {
+  type HandResult,
+  type Hand,
+  type Result,
+  type RoundContext,
+  type RoundState,
+  type RoundUpdate,
+  failure,
+  success,
+} from './types.js';
 
 const DEALER_STANDS_ON = 17;
 
 /**
  * Moves on to the next hand in play. A hand created by a split gets its
- * second card once it is its turn. Once no hand is left, the dealer plays and
- * the round is settled.
+ * second card once it is its turn. Once no hand is left, the dealer's turn
+ * begins, and the dealer plays it step by step with `dealerStep`.
  */
 export function continueRound(draft: Draft): RoundUpdate {
   for (advanceTurn(draft); draft.turn; advanceTurn(draft)) {
@@ -26,9 +36,37 @@ export function continueRound(draft: Draft): RoundUpdate {
     hitHand(draft, draft.turn);
   }
 
-  playDealer(draft);
+  draft.events.push({ type: 'dealerTurn' });
 
-  return settle(draft);
+  return { round: dealerRound(draft), events: draft.events };
+}
+
+/**
+ * Plays one step of the dealer's turn: reveals or deals the dealer's cards,
+ * draws one card if the dealer must hit, or settles the round once the dealer
+ * stands. Every step returns the events it caused, so a server can pace them.
+ *
+ * @returns a `ROUND_FINISHED` failure if the round is not in its dealer phase.
+ */
+export function dealerStep(
+  round: RoundState,
+  context: RoundContext,
+): Result<RoundUpdate> {
+  if (round.phase !== 'dealerTurn') {
+    return failure('ROUND_FINISHED', 'The dealer is not playing');
+  }
+
+  const draft = toDraft(round, context.rng);
+
+  if (draft.dealer.holeCardHidden) {
+    revealHoleCard(draft);
+  } else if (draft.dealer.cards.length < 2 || dealerMustDraw(draft)) {
+    dealToDealer(draft);
+  } else {
+    return success(settle(draft));
+  }
+
+  return success({ round: dealerRound(draft), events: draft.events });
 }
 
 export function revealHoleCard(draft: Draft): void {
@@ -71,21 +109,19 @@ export function settle(draft: Draft): RoundUpdate {
   return { round: toRound(draft, results), events: draft.events };
 }
 
-function playDealer(draft: Draft): void {
-  if (draft.rules.holeCard === 'peek') {
-    revealHoleCard(draft);
-  } else {
-    dealToDealer(draft);
-  }
+/** The round as it waits for the dealer, which plays step by step. */
+function dealerRound(draft: Draft): RoundState {
+  return { ...toRound(draft, null), phase: 'dealerTurn' };
+}
 
-  // Without a hand left that could beat the dealer, drawing changes nothing.
-  if (!draft.seats.some(({ hands }) => hands.some(isLive))) {
-    return;
-  }
+/*
+ * Without a hand left that could beat the dealer, drawing changes nothing, so
+ * the dealer stands right away.
+ */
+function dealerMustDraw(draft: Draft): boolean {
+  const aLiveHandRemains = draft.seats.some(({ hands }) => hands.some(isLive));
 
-  while (mustHit(draft)) {
-    dealToDealer(draft);
-  }
+  return aLiveHandRemains && mustHit(draft);
 }
 
 function isLive(hand: Hand): boolean {
