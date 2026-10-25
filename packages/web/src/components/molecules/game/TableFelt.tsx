@@ -10,14 +10,15 @@ interface TableFeltProps {
 }
 
 /*
- * Below the large breakpoint the seats flow in a two-column grid in seat order,
- * since three sides don't fit a phone. From there on the grid has the dealer in
- * the top row, the left and right seats beside the felt's center and the bottom
- * seats below it. From the extra large breakpoint the side seats also run down
- * beside the bottom seats, which saves a row of height once the width allows it.
+ * The layout follows the width of the container the table sits in, which the
+ * stage fixes while it scales the table. In a narrow container the seats flow
+ * in a two-column grid in seat order, since three sides don't fit there. In a
+ * wide one the grid has the dealer in the top row, the left and right seats
+ * beside the felt's center, running down beside the bottom seats, which sit
+ * below the center.
  */
 const FELT_CLASSES =
-  'table-cloth relative grid grid-cols-2 gap-3 rounded-(--felt-radius) p-4 shadow-[inset_0_0_24px_oklch(0_0_0/0.55)] lg:grid-cols-[auto_1fr_auto] lg:grid-rows-[auto_1fr_auto] lg:gap-6 lg:p-8';
+  'table-cloth relative grid grid-cols-2 gap-3 rounded-(--felt-radius) p-4 shadow-[inset_0_0_24px_oklch(0_0_0/0.55)] @5xl:grid-cols-[auto_1fr_auto] @5xl:grid-rows-[auto_1fr_auto] @5xl:gap-6 @5xl:p-8';
 
 /** The table's felt inside its painted rail, with the dealer on the top side and the seats on the other three. */
 export function TableFelt({ dealer, children }: TableFeltProps) {
@@ -40,18 +41,18 @@ export function TableFelt({ dealer, children }: TableFeltProps) {
         {/* A stitched line inside the cloth's edge */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-3 rounded-[inherit] border border-dashed border-felt-line lg:inset-5"
+          className="pointer-events-none absolute inset-3 rounded-[inherit] border border-dashed border-felt-line @5xl:inset-5"
         />
-        <div className="col-span-2 flex justify-center lg:col-span-3 lg:row-start-1">
+        <div className="col-span-2 flex justify-center @5xl:col-span-3 @5xl:row-start-1">
           {dealer}
         </div>
-        <div className="contents lg:col-start-1 lg:row-start-2 lg:flex lg:flex-col lg:justify-center lg:gap-4 xl:row-span-2">
+        <div className="contents @5xl:col-start-1 @5xl:row-span-2 @5xl:row-start-2 @5xl:flex @5xl:flex-col @5xl:justify-center @5xl:gap-4">
           {seats.slice(0, left)}
         </div>
-        <div className="contents lg:col-span-3 lg:row-start-3 lg:flex lg:justify-center lg:gap-6 xl:col-span-1 xl:col-start-2">
+        <div className="contents @5xl:col-start-2 @5xl:row-start-3 @5xl:flex @5xl:justify-center @5xl:gap-6">
           {seats.slice(left, left + bottom)}
         </div>
-        <div className="contents lg:col-start-3 lg:row-start-2 lg:flex lg:flex-col-reverse lg:justify-center lg:gap-4 xl:row-span-2">
+        <div className="contents @5xl:col-start-3 @5xl:row-span-2 @5xl:row-start-2 @5xl:flex @5xl:flex-col-reverse @5xl:justify-center @5xl:gap-4">
           {seats.slice(left + bottom)}
         </div>
       </div>

@@ -102,7 +102,7 @@ body {
   filter: drop-shadow(0 24px 30px oklch(0 0 0 / 0.7));
 }
 
-@media (min-width: 64rem) {
+@container (min-width: 64rem) {
   .table-rail {
     --rail: 2.5rem;
   }

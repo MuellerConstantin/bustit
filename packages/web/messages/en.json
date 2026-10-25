@@ -382,6 +382,8 @@
     },
     "gameView": {
       "table": "Game table",
+      "fullscreen": "Fullscreen",
+      "exitFullscreen": "Exit fullscreen",
       "connecting": "Connecting …",
       "joining": "Joining the table …",
       "disconnected": "The connection is lost. Reconnecting …",
