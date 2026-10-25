@@ -54,8 +54,8 @@ export async function runBot(
 
   let latest: TableStateMessage | null = null;
   let sitting = false;
-  /** The betting window the bot has bet in, by its deadline. */
-  let betDeadline: string | null = null;
+  /** The betting window the bot has bet in, by when it started. */
+  let betWindow: string | null = null;
   /** The turn the bot has acted on last, so it doesn't send one twice. */
   let actedOn: string | null = null;
 
@@ -92,9 +92,10 @@ export async function runBot(
   }
 
   async function bet(state: TableStateMessage, seat: number): Promise<void> {
-    const windowOpen = state.round === null;
+    // An early end only moves `endsAt`, so the start tells windows apart.
+    const window = state.timer?.kind === 'bet' ? state.timer.startedAt : null;
 
-    if (!windowOpen || !state.deadline || state.deadline === betDeadline) {
+    if (!window || window === betWindow) {
       return;
     }
 
@@ -102,7 +103,7 @@ export async function runBot(
       return;
     }
 
-    betDeadline = state.deadline;
+    betWindow = window;
     const ack = await send(PLAY_EVENT.bet, { tableId: table, stake: minBet });
 
     if (!ack.ok) {
@@ -142,7 +143,7 @@ export async function runBot(
       throw new Error('The turn has no hand or dealer card to decide on');
     }
 
-    const key = `${state.deadline}:${options.hand}:${cards.length}`;
+    const key = `${state.timer?.startedAt}:${options.hand}:${cards.length}`;
 
     if (key === actedOn) {
       return;

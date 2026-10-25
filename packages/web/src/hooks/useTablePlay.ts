@@ -148,7 +148,7 @@ export function useTablePlay(tableId: string) {
   return {
     /** Who the connection is logged in as, `null` until the server told. */
     userId: connection?.userId ?? null,
-    /** How far the server's clock is ahead of the browser's, to count down `deadline`. */
+    /** How far the server's clock is ahead of the browser's, to count down `timer`. */
     clockOffsetMs: connection?.clockOffsetMs ?? 0,
     status,
     state,

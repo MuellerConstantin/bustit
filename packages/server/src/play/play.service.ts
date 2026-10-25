@@ -16,7 +16,7 @@ import {
   publicView,
   startRound,
 } from '@bustit/engine';
-import type { PublicTableState } from '@bustit/shared';
+import type { PublicTableState, TableTimerKind } from '@bustit/shared';
 import {
   Inject,
   Injectable,
@@ -94,7 +94,7 @@ export const DEFAULT_PLAY_TIMINGS: PlayTimings = {
   betWindowMs: 30_000,
   betPauseMs: 5_000,
   turnWindowMs: 20_000,
-  resultPauseMs: 10_000,
+  resultPauseMs: 5_000,
   turnPauseMs: 1_500,
   dealerPauseMs: 1_000,
   reconnectWindowMs: 15_000,
@@ -123,7 +123,7 @@ type ActiveRound = {
  * seat's turn or the dealer's next step.
  */
 type ArmedTimer = {
-  readonly kind: 'bet' | 'turn' | 'result' | 'dealer';
+  readonly kind: TableTimerKind;
   /** When the phase began, which a re-armed timer keeps. */
   readonly startedAt: number;
   readonly endsAt: number;
@@ -468,7 +468,13 @@ export class PlayService implements OnModuleDestroy {
       seats: [...table.seats],
       bets: betsOf(table),
       round: table.round ? publicView(table.round.state) : null,
-      deadline: table.timer ? new Date(table.timer.endsAt).toISOString() : null,
+      timer: table.timer
+        ? {
+            kind: table.timer.kind,
+            startedAt: new Date(table.timer.startedAt).toISOString(),
+            endsAt: new Date(table.timer.endsAt).toISOString(),
+          }
+        : null,
       actionableAt:
         table.actionableAt === null
           ? null

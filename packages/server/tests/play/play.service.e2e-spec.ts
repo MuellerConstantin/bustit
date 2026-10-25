@@ -173,7 +173,7 @@ describe('PlayService', () => {
         seats: Array.from({ length: TABLE_CONFIG.seats }, () => null),
         bets: [],
         round: null,
-        deadline: null,
+        timer: null,
         actionableAt: null,
       });
     });
@@ -473,7 +473,7 @@ describe('PlayService', () => {
       const waiting = service.publicState(TABLE);
 
       expect(waiting.round?.phase).toBe('dealerTurn');
-      expect(waiting.deadline).not.toBeNull();
+      expect(waiting.timer?.kind).toBe('dealer');
       expect(waiting.actionableAt).toBeNull();
 
       await eventually(
@@ -638,11 +638,11 @@ describe('PlayService', () => {
 
       service.onChange(({ events }) => dealt.push(!!events));
 
-      expect(service.publicState(TABLE).deadline).toBeNull();
+      expect(service.publicState(TABLE).timer).toBeNull();
 
       await service.sit(TABLE, 0, alice.id);
 
-      expect(service.publicState(TABLE).deadline).not.toBeNull();
+      expect(service.publicState(TABLE).timer).not.toBeNull();
 
       await service.placeBet(TABLE, alice.id, 10);
       await eventually(() => service.publicState(TABLE).round !== null);
@@ -675,10 +675,10 @@ describe('PlayService', () => {
       await service.placeBet(TABLE, alice.id, 10);
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const { round, deadline } = service.publicState(TABLE);
+      const { round, timer } = service.publicState(TABLE);
 
       expect(round).toBeNull();
-      expect(Date.parse(deadline!)).toBeGreaterThan(Date.now() + 10_000);
+      expect(Date.parse(timer!.endsAt)).toBeGreaterThan(Date.now() + 10_000);
     });
 
     it('gives the full window back to someone who sits down without a bet', async () => {
@@ -689,15 +689,19 @@ describe('PlayService', () => {
       await service.sit(TABLE, 0, alice.id);
       await service.placeBet(TABLE, alice.id, 10);
 
-      expect(
-        Date.parse(service.publicState(TABLE).deadline!),
-      ).toBeLessThanOrEqual(Date.now() + 5_000);
+      const shortened = service.publicState(TABLE).timer!;
+
+      expect(shortened.kind).toBe('bet');
+      expect(Date.parse(shortened.endsAt)).toBeLessThanOrEqual(
+        Date.now() + 5_000,
+      );
 
       await service.sit(TABLE, 2, bob.id);
 
-      expect(Date.parse(service.publicState(TABLE).deadline!)).toBeGreaterThan(
-        Date.now() + 10_000,
-      );
+      const restored = service.publicState(TABLE).timer!;
+
+      expect(restored.startedAt).toBe(shortened.startedAt);
+      expect(Date.parse(restored.endsAt)).toBeGreaterThan(Date.now() + 10_000);
     });
 
     it('does not deal when the bets are gone before the window ends', async () => {
@@ -708,7 +712,7 @@ describe('PlayService', () => {
       await service.placeBet(TABLE, alice.id, 10);
       await service.leave(TABLE, alice.id);
 
-      expect(service.publicState(TABLE).deadline).toBeNull();
+      expect(service.publicState(TABLE).timer).toBeNull();
 
       await new Promise((resolve) => setTimeout(resolve, 250));
 
@@ -723,7 +727,7 @@ describe('PlayService', () => {
       );
       await eventually(() => service.publicState(TABLE).round === null);
 
-      expect(service.publicState(TABLE).deadline).not.toBeNull();
+      expect(service.publicState(TABLE).timer).not.toBeNull();
     });
 
     it('accepts bets again once the next window has opened', async () => {
@@ -745,13 +749,15 @@ describe('PlayService', () => {
 
       await service.sit(TABLE, 0, alice.id);
 
-      const first = service.publicState(TABLE).deadline;
+      const first = service.publicState(TABLE).timer?.endsAt;
 
-      await eventually(() => service.publicState(TABLE).deadline !== first);
+      await eventually(
+        () => service.publicState(TABLE).timer?.endsAt !== first,
+      );
 
       const state = service.publicState(TABLE);
 
-      expect(state.deadline).not.toBeNull();
+      expect(state.timer).not.toBeNull();
       expect(state.seats[0]).toBe(alice.id);
       expect(state.round).toBeNull();
     });
@@ -763,7 +769,7 @@ describe('PlayService', () => {
       await service.sit(TABLE, 0, alice.id);
       await eventually(() => service.publicState(TABLE).seats[0] === null);
 
-      expect(service.publicState(TABLE).deadline).toBeNull();
+      expect(service.publicState(TABLE).timer).toBeNull();
     });
 
     it('keeps the seat of a user who bets, while the one who sits out loses it', async () => {
@@ -795,7 +801,7 @@ describe('PlayService', () => {
     it('sends a stand to every seat that lets its turn run out', async () => {
       const { service, alice, bob } = await roundInPlay(10, FAST);
 
-      expect(service.publicState(TABLE).deadline).not.toBeNull();
+      expect(service.publicState(TABLE).timer).not.toBeNull();
 
       await eventually(
         () => service.publicState(TABLE).round?.phase === 'settled',
@@ -929,9 +935,11 @@ describe('PlayService', () => {
       await service.absent(TABLE, 'alice');
       await service.present(TABLE, 'alice');
 
-      const { deadline } = service.publicState(TABLE);
+      const { timer } = service.publicState(TABLE);
 
-      await eventually(() => service.publicState(TABLE).deadline !== deadline);
+      await eventually(
+        () => service.publicState(TABLE).timer?.endsAt !== timer?.endsAt,
+      );
 
       expect(service.publicState(TABLE).seats[0]).toBe('alice');
     });

@@ -71,18 +71,32 @@ export const playErrorCodeSchema = z.enum([
 
 export type PlayErrorCode = z.infer<typeof playErrorCodeSchema>;
 
+/**
+ * What a table's timer waits for: the betting window before a round, the turn
+ * of the seat to act, the next step of the dealer or the result hold after
+ * the round is settled.
+ */
+export type TableTimerKind = 'bet' | 'turn' | 'dealer' | 'result';
+
+/** The timer a table runs, with ISO timestamps, so clients can show its progress. */
+export type TableTimer = {
+  readonly kind: TableTimerKind;
+  /**
+   * When the phase began. A betting window that ends early keeps it, only
+   * `endsAt` moves.
+   */
+  readonly startedAt: string;
+  readonly endsAt: string;
+};
+
 /** The table as every client may see it. */
 export type PublicTableState = {
   readonly seats: readonly (string | null)[];
   /** The bets placed for the next round, in seat order. */
   readonly bets: readonly Bet[];
   readonly round: PublicRoundState | null;
-  /**
-   * When the running timer ends, as an ISO timestamp: the result hold of a
-   * settled round, the betting window before a round, the turn of the seat to
-   * act during one, or the next step of the dealer.
-   */
-  readonly deadline: string | null;
+  /** The running timer, `null` while the table waits for nobody. */
+  readonly timer: TableTimer | null;
   /**
    * When the seat to act may act, as an ISO timestamp. Actions before it are
    * rejected, so clients can show the pause without guessing it.

@@ -32,7 +32,7 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
     act,
   } = useTablePlay(tableId);
   const [isPending, setIsPending] = useState(false);
-  const secondsLeft = useCountdown(state?.deadline ?? null, clockOffsetMs);
+  const secondsLeft = useCountdown(state?.timer?.endsAt ?? null, clockOffsetMs);
 
   /** Blocks the controls until the server answered. */
   const run = async (message: () => Promise<unknown>) => {
