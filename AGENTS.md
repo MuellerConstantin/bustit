@@ -87,9 +87,10 @@ folders themselves for that.
   dealing and a split hand's second card. Once no hand is left, the dealer
   plays one step per call, the last one settles the round. Each call returns
   a new round and the events of what happened, in order, so the server can
-  give clients time between steps with its timers: a pause before every
-  player action, a delay between dealer steps and a hold of the result. A
-  timed-out player is sent a stand.
+  time every phase with its timers. A pause is the shortest a phase lasts, so
+  clients can show it, a window the longest it waits for players; timings are
+  named after that, e.g. `betPauseMs` and `betWindowMs`. A timed-out player
+  is sent a stand.
 - **Immutable rounds as plain JSON**: Every call returns a new round and
   never changes the one passed in. Internally a call works on a mutable
   draft. The round holds no classes and no RNG, so it can be stored, logged

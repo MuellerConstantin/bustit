@@ -54,40 +54,50 @@ export const ROUND_RNG = Symbol('ROUND_RNG');
 /** Injection token of the `PlayTimings`. */
 export const PLAY_TIMINGS = Symbol('PLAY_TIMINGS');
 
+/**
+ * The timings of a table. A window is the longest a phase waits for players,
+ * a pause the shortest a phase lasts, so clients have time to show it.
+ */
 export type PlayTimings = {
   /**
-   * How long bets can be placed before the round is dealt. The window runs
-   * whenever someone sits at the table and no round is being played.
+   * How long bets can be placed at most before the round is dealt. The window
+   * runs whenever someone sits at the table and no round is being played.
    */
   readonly betWindowMs: number;
+  /**
+   * How long the betting window stays open at least. Once every seated user
+   * has bet, the round is dealt as soon as this pause is over.
+   */
+  readonly betPauseMs: number;
   /** How long a seat has to act before it is sent a stand. */
-  readonly turnMs: number;
+  readonly turnWindowMs: number;
   /**
    * How long the result of a settled round stays on the table before the next
    * betting window opens and clears it.
    */
-  readonly resultMs: number;
+  readonly resultPauseMs: number;
   /**
    * How long a seat has to wait after its turn starts before it may act. Clients
    * use the pause to show what happened before the next action.
    */
-  readonly actionPauseMs: number;
+  readonly turnPauseMs: number;
   /** How long the dealer waits before each step of its turn. */
-  readonly dealerStepMs: number;
+  readonly dealerPauseMs: number;
   /**
    * How long the seat of a user whose connection dropped is kept for them to
    * come back. It is given up when a betting window ends after that.
    */
-  readonly reconnectMs: number;
+  readonly reconnectWindowMs: number;
 };
 
 export const DEFAULT_PLAY_TIMINGS: PlayTimings = {
   betWindowMs: 30_000,
-  turnMs: 20_000,
-  resultMs: 10_000,
-  actionPauseMs: 1_500,
-  dealerStepMs: 1_000,
-  reconnectMs: 15_000,
+  betPauseMs: 5_000,
+  turnWindowMs: 20_000,
+  resultPauseMs: 10_000,
+  turnPauseMs: 1_500,
+  dealerPauseMs: 1_000,
+  reconnectWindowMs: 15_000,
 };
 
 /** How many betting windows in a row a user can sit out before losing the seat. */
@@ -108,9 +118,14 @@ type ActiveRound = {
   readonly state: RoundState;
 };
 
-/** The one timer a table has running: the result hold, the betting window or a seat's turn. */
+/**
+ * The one timer a table has running: the result hold, the betting window, a
+ * seat's turn or the dealer's next step.
+ */
 type ArmedTimer = {
   readonly kind: 'bet' | 'turn' | 'result' | 'dealer';
+  /** When the phase began, which a re-armed timer keeps. */
+  readonly startedAt: number;
   readonly endsAt: number;
   readonly handle: NodeJS.Timeout;
 };
@@ -311,7 +326,7 @@ export class PlayService implements OnModuleDestroy {
   /**
    * The user is no longer at the table, e.g. because the connection dropped
    * or the page was left without standing up. The seat, its bet and a turn
-   * keep running for them to come back, see `PlayTimings.reconnectMs`.
+   * keep running for them to come back, see `PlayTimings.reconnectWindowMs`.
    */
   absent(tableId: string, userId: string): Promise<void> {
     return this.exclusive(tableId, (table) => {
@@ -515,7 +530,7 @@ export class PlayService implements OnModuleDestroy {
 
   /** Frees the seats of users whose connection dropped too long ago. */
   private freeGone(table: PlayTable): void {
-    const since = Date.now() - this.timings.reconnectMs;
+    const since = Date.now() - this.timings.reconnectWindowMs;
 
     for (const [userId, droppedAt] of table.absent) {
       if (droppedAt <= since) {
@@ -742,19 +757,19 @@ export class PlayService implements OnModuleDestroy {
       return;
     }
 
-    table.actionableAt = Date.now() + this.timings.actionPauseMs;
+    table.actionableAt = Date.now() + this.timings.turnPauseMs;
     const userId = table.seats[round.turn.seat];
 
     this.arm(
       tableId,
       table,
       'turn',
-      userId && table.leaving.has(userId) ? 0 : this.timings.turnMs,
+      userId && table.leaving.has(userId) ? 0 : this.timings.turnWindowMs,
     );
   }
 
   /**
-   * Keeps the result of a settled round on the table for `resultMs` before the
+   * Keeps the result of a settled round on the table for `resultPauseMs` before the
    * next betting window opens. Bets are closed meanwhile. An empty table has
    * nothing to show the result to, so it is cleared right away.
    */
@@ -765,14 +780,14 @@ export class PlayService implements OnModuleDestroy {
       return;
     }
 
-    this.arm(tableId, table, 'result', this.timings.resultMs);
+    this.arm(tableId, table, 'result', this.timings.resultPauseMs);
   }
 
   /**
    * Keeps a betting window running while someone sits at the table and no
-   * round is being played, and stops the timer when the table is empty. Bets
-   * don't extend a window that is running. While a settled round's result is
-   * still shown, the result timer decides when the window opens.
+   * round is being played, and stops the timer when the table is empty. While
+   * a settled round's result is still shown, the result timer decides when
+   * the window opens. A running window is fitted to the bets placed.
    */
   private armBet(tableId: string, table: PlayTable): void {
     if (inPlay(table)) {
@@ -792,6 +807,36 @@ export class PlayService implements OnModuleDestroy {
     if (table.timer?.kind !== 'bet') {
       this.arm(tableId, table, 'bet', this.timings.betWindowMs);
     }
+
+    this.fitBetWindow(tableId, table);
+  }
+
+  /**
+   * Ends the betting window once every seated user has bet, but not before
+   * `betPauseMs` has passed since it opened. Until then, and for someone who
+   * sits down without a bet, it runs its full `betWindowMs`.
+   */
+  private fitBetWindow(tableId: string, table: PlayTable): void {
+    const { timer } = table;
+
+    if (timer?.kind !== 'bet') {
+      return;
+    }
+
+    const fullEnd = timer.startedAt + this.timings.betWindowMs;
+    const everyoneBet = table.seats.every(
+      (userId, seat) => userId === null || table.bets.has(seat),
+    );
+    const endsAt = everyoneBet
+      ? Math.min(
+          fullEnd,
+          Math.max(timer.startedAt + this.timings.betPauseMs, Date.now()),
+        )
+      : fullEnd;
+
+    if (endsAt !== timer.endsAt) {
+      this.arm(tableId, table, 'bet', endsAt - Date.now(), timer.startedAt);
+    }
   }
 
   private arm(
@@ -799,11 +844,13 @@ export class PlayService implements OnModuleDestroy {
     table: PlayTable,
     kind: ArmedTimer['kind'],
     delayMs: number,
+    startedAt = Date.now(),
   ): void {
     clearTimer(table);
 
     const timer: ArmedTimer = {
       kind,
+      startedAt,
       endsAt: Date.now() + delayMs,
       handle: setTimeout(() => this.fire(tableId, timer), delayMs),
     };
@@ -848,7 +895,7 @@ export class PlayService implements OnModuleDestroy {
    */
   private armDealer(tableId: string, table: PlayTable): void {
     table.actionableAt = null;
-    this.arm(tableId, table, 'dealer', this.timings.dealerStepMs);
+    this.arm(tableId, table, 'dealer', this.timings.dealerPauseMs);
   }
 
   /**

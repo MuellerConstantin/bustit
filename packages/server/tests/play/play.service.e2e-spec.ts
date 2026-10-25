@@ -38,11 +38,12 @@ const TABLE_CONFIG: TableConfig = { seats: 5, minBet: 5, maxBet: 10_000 };
 /** Timers that never fire within a test. */
 const QUIET: PlayTimings = {
   betWindowMs: 60_000,
-  turnMs: 60_000,
-  resultMs: 60_000,
-  actionPauseMs: 0,
-  dealerStepMs: 0,
-  reconnectMs: 60_000,
+  betPauseMs: 60_000,
+  turnWindowMs: 60_000,
+  resultPauseMs: 60_000,
+  turnPauseMs: 0,
+  dealerPauseMs: 0,
+  reconnectWindowMs: 60_000,
 };
 
 /** Every player starts with the starting balance booked as signup bonus. */
@@ -444,7 +445,7 @@ describe('PlayService', () => {
     it('plays the dealer step by step on its own timer', async () => {
       const { service } = await roundInPlay(10, {
         ...QUIET,
-        dealerStepMs: 100,
+        dealerPauseMs: 100,
       });
       const dealerChanges: string[][] = [];
 
@@ -487,7 +488,7 @@ describe('PlayService', () => {
     it('rejects an action until the pause of its turn is over', async () => {
       const { service, alice, bob } = await roundInPlay(10, {
         ...QUIET,
-        actionPauseMs: 200,
+        turnPauseMs: 200,
       });
       const { seat } = service.publicState(TABLE).round!.turn!;
       const player = seat === 0 ? alice : bob;
@@ -622,11 +623,12 @@ describe('PlayService', () => {
   describe('timers', () => {
     const FAST: PlayTimings = {
       betWindowMs: 100,
-      turnMs: 300,
-      resultMs: 100,
-      actionPauseMs: 0,
-      dealerStepMs: 0,
-      reconnectMs: 60_000,
+      betPauseMs: 100,
+      turnWindowMs: 300,
+      resultPauseMs: 100,
+      turnPauseMs: 0,
+      dealerPauseMs: 0,
+      reconnectWindowMs: 60_000,
     };
 
     it('runs a betting window once someone sits and deals the bets when it ends', async () => {
@@ -648,6 +650,54 @@ describe('PlayService', () => {
       expect(service.publicState(TABLE).bets).toEqual([]);
       expect(await entriesOf(alice.id, 'bet')).toMatchObject([{ delta: -10 }]);
       expect(dealt).toContain(true);
+    });
+
+    it('deals once everyone has bet and the bet pause is over', async () => {
+      const service = newService('bet-pause', { ...QUIET, betPauseMs: 100 });
+      const alice = await createPlayer(app);
+      const bob = await createPlayer(app);
+
+      await service.sit(TABLE, 0, alice.id);
+      await service.sit(TABLE, 2, bob.id);
+      await service.placeBet(TABLE, alice.id, 10);
+      await service.placeBet(TABLE, bob.id, 10);
+
+      await eventually(() => service.publicState(TABLE).round !== null);
+    });
+
+    it('keeps the window open while a seated user has not bet', async () => {
+      const service = newService('bet-pause', { ...QUIET, betPauseMs: 100 });
+      const alice = await createPlayer(app);
+      const bob = await createPlayer(app);
+
+      await service.sit(TABLE, 0, alice.id);
+      await service.sit(TABLE, 2, bob.id);
+      await service.placeBet(TABLE, alice.id, 10);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      const { round, deadline } = service.publicState(TABLE);
+
+      expect(round).toBeNull();
+      expect(Date.parse(deadline!)).toBeGreaterThan(Date.now() + 10_000);
+    });
+
+    it('gives the full window back to someone who sits down without a bet', async () => {
+      const service = newService('bet-pause', { ...QUIET, betPauseMs: 5_000 });
+      const alice = await createPlayer(app);
+      const bob = await createPlayer(app);
+
+      await service.sit(TABLE, 0, alice.id);
+      await service.placeBet(TABLE, alice.id, 10);
+
+      expect(
+        Date.parse(service.publicState(TABLE).deadline!),
+      ).toBeLessThanOrEqual(Date.now() + 5_000);
+
+      await service.sit(TABLE, 2, bob.id);
+
+      expect(Date.parse(service.publicState(TABLE).deadline!)).toBeGreaterThan(
+        Date.now() + 10_000,
+      );
     });
 
     it('does not deal when the bets are gone before the window ends', async () => {
@@ -679,7 +729,7 @@ describe('PlayService', () => {
     it('accepts bets again once the next window has opened', async () => {
       const { service, alice } = await roundInPlay(10, {
         ...QUIET,
-        resultMs: 100,
+        resultPauseMs: 100,
       });
 
       await playOut(service);
@@ -765,11 +815,12 @@ describe('PlayService', () => {
     it('gives the next seat its own time after a seat acted', async () => {
       const { service, alice, bob } = await roundInPlay(10, {
         betWindowMs: 60_000,
-        turnMs: 400,
-        resultMs: 60_000,
-        actionPauseMs: 0,
-        dealerStepMs: 0,
-        reconnectMs: 60_000,
+        betPauseMs: 60_000,
+        turnWindowMs: 400,
+        resultPauseMs: 60_000,
+        turnPauseMs: 0,
+        dealerPauseMs: 0,
+        reconnectWindowMs: 60_000,
       });
       const { seat } = service.publicState(TABLE).round!.turn!;
 
@@ -788,11 +839,12 @@ describe('PlayService', () => {
     it('keeps the seat and the bet of an absent user to come back', async () => {
       const service = newService('absence', {
         betWindowMs: 100,
-        turnMs: 60_000,
-        resultMs: 100,
-        actionPauseMs: 0,
-        dealerStepMs: 0,
-        reconnectMs: 60_000,
+        betPauseMs: 100,
+        turnWindowMs: 60_000,
+        resultPauseMs: 100,
+        turnPauseMs: 0,
+        dealerPauseMs: 0,
+        reconnectWindowMs: 60_000,
       });
       const alice = await createPlayer(app);
 
@@ -809,11 +861,12 @@ describe('PlayService', () => {
     it('frees the seat and the bet once the user stays away too long', async () => {
       const service = newService('absence', {
         betWindowMs: 100,
-        turnMs: 60_000,
-        resultMs: 100,
-        actionPauseMs: 0,
-        dealerStepMs: 0,
-        reconnectMs: 0,
+        betPauseMs: 100,
+        turnWindowMs: 60_000,
+        resultPauseMs: 100,
+        turnPauseMs: 0,
+        dealerPauseMs: 0,
+        reconnectWindowMs: 0,
       });
       const alice = await createPlayer(app);
 
@@ -864,11 +917,12 @@ describe('PlayService', () => {
     it('keeps the seat of a user who is back', async () => {
       const service = newService('absence', {
         betWindowMs: 100,
-        turnMs: 60_000,
-        resultMs: 100,
-        actionPauseMs: 0,
-        dealerStepMs: 0,
-        reconnectMs: 0,
+        betPauseMs: 100,
+        turnWindowMs: 60_000,
+        resultPauseMs: 100,
+        turnPauseMs: 0,
+        dealerPauseMs: 0,
+        reconnectWindowMs: 0,
       });
 
       await service.sit(TABLE, 0, 'alice');
@@ -997,7 +1051,7 @@ describe('PlayService', () => {
     it('deals the next round once the result of the previous one is gone', async () => {
       const { service, alice } = await roundInPlay(10, {
         ...QUIET,
-        resultMs: 100,
+        resultPauseMs: 100,
       });
 
       await playOut(service);

@@ -22,7 +22,8 @@ describe('play gateway (e2e)', () => {
 
   beforeAll(async () => {
     app = await createTestApp({
-      playTimings: { actionPauseMs: 0, dealerStepMs: 0 },
+      // Rounds are dealt on request here, never by the betting window.
+      playTimings: { turnPauseMs: 0, dealerPauseMs: 0, betPauseMs: 30_000 },
     });
 
     const server = app.http as Server;

@@ -61,11 +61,12 @@ describe('RoundRecoveryService', () => {
         app.get(TablesService),
         {
           betWindowMs: 60_000,
-          turnMs: 60_000,
-          resultMs: 60_000,
-          actionPauseMs: 0,
-          dealerStepMs: 0,
-          reconnectMs: 60_000,
+          betPauseMs: 60_000,
+          turnWindowMs: 60_000,
+          resultPauseMs: 60_000,
+          turnPauseMs: 0,
+          dealerPauseMs: 0,
+          reconnectWindowMs: 60_000,
         },
       );
       services.push(service);
