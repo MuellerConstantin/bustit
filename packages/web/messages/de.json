@@ -383,6 +383,11 @@
       "deal": "Austeilen",
       "leaveSeat": "Aufstehen"
     },
+    "screenTooSmall": {
+      "title": "Zu eng hier",
+      "text": "Dieser Tisch braucht mehr Platz: mindestens 1024 Pixel Breite. Setz dich an einen Computer oder dreh dein Tablet quer.",
+      "lobby": "Zurück zur Lobby"
+    },
     "gameView": {
       "table": "Spieltisch",
       "balance": "Guthaben",

@@ -28,7 +28,7 @@ const OUTLINED =
   '[-webkit-text-stroke:0.25em_var(--background)] [filter:drop-shadow(0_3px_0_oklch(0_0_0/0.55))] [paint-order:stroke_fill]';
 
 const lettering = tv({
-  base: `font-display text-4xl tracking-wider whitespace-nowrap uppercase -rotate-3 @5xl:text-6xl ${OUTLINED}`,
+  base: `font-display text-6xl tracking-wider whitespace-nowrap uppercase -rotate-3 ${OUTLINED}`,
   variants: {
     tone: {
       gold: 'text-gold',

@@ -6,6 +6,8 @@ import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Skeleton } from '@/components/atoms/Skeleton';
+import { ScreenTooSmall } from '@/components/molecules/game/ScreenTooSmall';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTable } from '@/hooks/useTable';
 import { Armchair, LogOut } from 'lucide-react';
 import { Bill } from '../atoms/Bill';
@@ -14,6 +16,8 @@ import { useRealtime } from '@/providers/RealtimeProvider';
 import { GameView } from './GameView';
 
 const STAND_TIMEOUT_MS = 2000;
+/* The table is laid out for this width and up, narrower screens get a notice. */
+const GAME_MEDIA_QUERY = '(min-width: 64rem)';
 
 function TableViewSkeleton() {
   const t = useTranslations('components.tableView');
@@ -45,6 +49,7 @@ function TableOfPath() {
   const { id } = useParams<{ id: string }>();
   const { table, isLoading, isNotFound, error, reload } = useTable(id);
   const { socket } = useRealtime();
+  const isWide = useMediaQuery(GAME_MEDIA_QUERY);
 
   /*
    * Leaving the page alone keeps the seat for a while, so the exit stands up
@@ -117,11 +122,15 @@ function TableOfPath() {
           </div>
         </div>
       </div>
-      <GameView
-        tableId={table.id}
-        minBet={table.minBet}
-        maxBet={table.maxBet}
-      />
+      {isWide ? (
+        <GameView
+          tableId={table.id}
+          minBet={table.minBet}
+          maxBet={table.maxBet}
+        />
+      ) : (
+        <ScreenTooSmall />
+      )}
     </div>
   );
 }

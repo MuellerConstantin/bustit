@@ -383,6 +383,11 @@
       "deal": "Deal",
       "leaveSeat": "Stand up"
     },
+    "screenTooSmall": {
+      "title": "Too tight in here",
+      "text": "This table needs more room: at least 1024 pixels of width. Sit down at a computer or turn your tablet sideways.",
+      "lobby": "Back to the lobby"
+    },
     "gameView": {
       "table": "Game table",
       "balance": "Balance",

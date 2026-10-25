@@ -18,14 +18,11 @@ import {
 } from '@/components/molecules/game/TimerDialog';
 import { PlayControls } from '@/components/organisms/game/PlayControls';
 import { useFullscreen } from '@/hooks/useFullscreen';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useOwnUser } from '@/hooks/useOwnUser';
 import { useTablePlay } from '@/hooks/useTablePlay';
 import { useTimerProgress } from '@/hooks/useTimerProgress';
 import { type Verdict, verdictOf } from '@/lib/verdict';
 
-/* From this window width the game fits the window's height instead of scrolling the page. */
-const FIT_MEDIA_QUERY = '(min-width: 64rem)';
 const FIT_BOTTOM_GAP = 16;
 const FIT_MIN_HEIGHT = 480;
 
@@ -61,7 +58,6 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
   const progress = useTimerProgress(state?.timer ?? null, clockOffsetMs);
   const rootRef = useRef<HTMLDivElement>(null);
   const { isFocused, toggle: toggleFullscreen } = useFullscreen(rootRef);
-  const isWide = useMediaQuery(FIT_MEDIA_QUERY);
   const [fitHeight, setFitHeight] = useState<number | null>(null);
   const hasState = state !== null;
   const format = useFormatter();
@@ -142,7 +138,7 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
     : [];
   const isMyTurn = turn !== null && turn.seat === mySeat;
   const turnUserId = turn ? state.seats[turn.seat] : null;
-  const height = isWide && !isFocused ? fitHeight : null;
+  const height = isFocused ? null : fitHeight;
   /*
    * Once the round is settled the dialog says how it went: for the user if they
    * played, otherwise only that it is over, which is all a watcher can say.
@@ -243,8 +239,8 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
                   ? t('dealing')
                   : t('placeBets')}
       </p>
-      {/* A fixed height on wide windows, so the controls changing between phases don't resize the table */}
-      <div className="flex shrink-0 flex-col gap-3 lg:h-16">
+      {/* A fixed height, so the controls changing between phases don't resize the table */}
+      <div className="flex h-16 shrink-0 flex-col gap-3">
         <PlayControls
           isSeated={mySeat !== -1}
           isRoundRunning={!bettingOpen}

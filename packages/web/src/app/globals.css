@@ -97,18 +97,12 @@ body {
  * radius follows the rail's inner curve.
  */
 .table-rail {
-  --rail: 1.25rem;
+  --rail: 2.5rem;
   --rail-span: calc(var(--rail) * 3.3);
   --felt-radius: calc(var(--rail) * 0.67);
   position: relative;
   padding: var(--rail);
   filter: drop-shadow(0 24px 30px oklch(0 0 0 / 0.7));
-}
-
-@container (min-width: 64rem) {
-  .table-rail {
-    --rail: 2.5rem;
-  }
 }
 
 .rail-corner,
