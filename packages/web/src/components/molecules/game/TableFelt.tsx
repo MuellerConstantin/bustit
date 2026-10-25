@@ -17,10 +17,12 @@ interface TableFeltProps {
  * in a two-column grid in seat order, since three sides don't fit there. In a
  * wide one the grid has the dealer in the top row, the left and right seats
  * beside the felt's center, running down beside the bottom seats, which sit
- * below the center.
+ * below the center. The rows have fixed heights, sized for a seat's panel and
+ * the dealer's, so the table is the same size whatever the number of seats and
+ * its empty middle, where the dialog goes, stays where it is.
  */
 const FELT_CLASSES =
-  'table-cloth relative grid grid-cols-2 gap-3 rounded-(--felt-radius) p-4 shadow-[inset_0_0_24px_oklch(0_0_0/0.55)] @5xl:grid-cols-[auto_1fr_auto] @5xl:grid-rows-[auto_1fr_auto] @5xl:gap-6 @5xl:p-8';
+  'table-cloth relative grid grid-cols-2 gap-3 rounded-(--felt-radius) p-4 shadow-[inset_0_0_24px_oklch(0_0_0/0.55)] @5xl:grid-cols-[auto_1fr_auto] @5xl:grid-rows-[10rem_12.5rem_13rem] @5xl:gap-6 @5xl:p-8';
 
 /** The table's felt inside its painted rail, with the dealer on the top side and the seats on the other three. */
 export function TableFelt({ dealer, overlay, children }: TableFeltProps) {
@@ -57,9 +59,9 @@ export function TableFelt({ dealer, overlay, children }: TableFeltProps) {
         <div className="contents @5xl:col-start-3 @5xl:row-span-2 @5xl:row-start-2 @5xl:flex @5xl:flex-col-reverse @5xl:justify-center @5xl:gap-4">
           {seats.slice(left + bottom)}
         </div>
-        {/* In the empty middle of a wide table, in the top corner of a narrow one */}
+        {/* In the empty middle cell of a wide table, in the top corner of a narrow one */}
         {overlay && (
-          <div className="pointer-events-none absolute top-4 right-4 z-10 origin-top-right scale-75 @5xl:inset-0 @5xl:flex @5xl:scale-100 @5xl:items-center @5xl:justify-center">
+          <div className="pointer-events-none absolute top-4 right-4 z-10 origin-top-right scale-75 @5xl:static @5xl:col-start-2 @5xl:row-start-2 @5xl:flex @5xl:scale-100 @5xl:items-center @5xl:justify-center">
             {overlay}
           </div>
         )}
