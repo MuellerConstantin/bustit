@@ -24,6 +24,14 @@ export type PlayResult =
 
 const ACK_TIMEOUT_MS = 5000;
 
+const INFO_EVENT = 'info';
+
+/** What the server answers the `info` message with. */
+type ConnectionInfo = {
+  serverTime: string;
+  user: { id: string };
+};
+
 /**
  * Plays at a table over the realtime connection: joins the table while the
  * component is mounted, keeps its state up to date and sends the player's
@@ -35,6 +43,10 @@ export function useTablePlay(tableId: string) {
   const [state, setState] = useState<TableStateMessage | null>(null);
   const [events, setEvents] = useState<RoundEventsMessage | null>(null);
   const [failure, setFailure] = useState<PlayFailure | null>(null);
+  const [connection, setConnection] = useState<{
+    userId: string;
+    clockOffsetMs: number;
+  } | null>(null);
 
   /*
    * Joining and leaving are sent one after another. The server handles
@@ -77,6 +89,33 @@ export function useTablePlay(tableId: string) {
       return;
     }
 
+    let stale = false;
+
+    void socket
+      .timeout(ACK_TIMEOUT_MS)
+      .emitWithAck(INFO_EVENT)
+      .then((info: ConnectionInfo) => {
+        if (!stale) {
+          setConnection({
+            userId: info.user.id,
+            clockOffsetMs: Date.parse(info.serverTime) - Date.now(),
+          });
+        }
+      })
+      .catch((error: unknown) => {
+        console.error('Could not read the connection info', error);
+      });
+
+    return () => {
+      stale = true;
+    };
+  }, [socket, status]);
+
+  useEffect(() => {
+    if (status !== 'connected') {
+      return;
+    }
+
     const handleState = (message: TableStateMessage) => {
       if (message.tableId === tableId) {
         setState(message);
@@ -107,6 +146,11 @@ export function useTablePlay(tableId: string) {
   }, [socket, status, tableId, send]);
 
   return {
+    /** Who the connection is logged in as, `null` until the server told. */
+    userId: connection?.userId ?? null,
+    /** How far the server's clock is ahead of the browser's, to count down `deadline`. */
+    clockOffsetMs: connection?.clockOffsetMs ?? 0,
+    status,
     state,
     /** What happened in the round the last time cards were dealt or played. */
     events,

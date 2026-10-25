@@ -313,6 +313,98 @@
       "betsLabel": "Einsatz",
       "betRange": "{min, number} – {max, number}",
       "betRangeLabel": "{min, number} bis {max, number} Bucks"
+    },
+    "playingCard": {
+      "hidden": "Verdeckte Karte",
+      "label": "{suit} {rank}",
+      "suits": {
+        "clubs": "Kreuz",
+        "diamonds": "Karo",
+        "hearts": "Herz",
+        "spades": "Pik"
+      },
+      "ranks": {
+        "A": "Ass",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "5",
+        "6": "6",
+        "7": "7",
+        "8": "8",
+        "9": "9",
+        "10": "10",
+        "J": "Bube",
+        "Q": "Dame",
+        "K": "König"
+      }
+    },
+    "playerHand": {
+      "total": "{total}",
+      "totalSoft": "{total} (weich)",
+      "stakeLabel": "Einsatz",
+      "status": {
+        "bust": "Über 21",
+        "blackjack": "Blackjack",
+        "stood": "Steht"
+      },
+      "outcome": {
+        "blackjack": "Blackjack +{net, number}",
+        "win": "Gewonnen +{net, number}",
+        "push": "Unentschieden",
+        "lose": "Verloren −{stake, number}"
+      }
+    },
+    "dealerHand": {
+      "title": "Dealer",
+      "total": "{total}"
+    },
+    "seatPanel": {
+      "free": "Frei",
+      "you": "Du",
+      "sit": "Hinsetzen",
+      "betLabel": "Einsatz"
+    },
+    "playControls": {
+      "spectator": "Du schaust zu. Setz dich auf einen freien Platz, um mitzuspielen.",
+      "actionsLabel": "Aktionen",
+      "actions": {
+        "hit": "Karte",
+        "stand": "Halten",
+        "double": "Verdoppeln",
+        "split": "Teilen"
+      },
+      "stakeLabel": "Einsatz",
+      "placeBet": "Einsatz setzen",
+      "changeBet": "Einsatz ändern",
+      "deal": "Austeilen",
+      "leaveSeat": "Aufstehen"
+    },
+    "gameView": {
+      "connecting": "Verbindung wird aufgebaut …",
+      "joining": "Tisch wird betreten …",
+      "disconnected": "Die Verbindung ist unterbrochen. Sie wird neu aufgebaut …",
+      "yourTurn": "Du bist dran.",
+      "turnOf": "{name} ist dran.",
+      "roundOver": "Die Runde ist beendet. Setzt für die nächste.",
+      "dealing": "Es wird gleich ausgeteilt.",
+      "placeBets": "Setzt eure Einsätze.",
+      "seconds": "{seconds} s",
+      "errors": {
+        "invalid_request": "Die Eingabe war ungültig.",
+        "table_not_found": "Den Tisch gibt es nicht mehr.",
+        "not_joined": "Du bist diesem Tisch nicht beigetreten.",
+        "seat_invalid": "Diesen Platz gibt es nicht.",
+        "seat_taken": "Der Platz ist schon besetzt.",
+        "seat_empty": "Der Platz ist leer.",
+        "already_seated": "Du sitzt schon an diesem Tisch.",
+        "not_seated": "Du sitzt nicht an diesem Tisch.",
+        "bet_out_of_limits": "Der Einsatz liegt außerhalb der Limits des Tisches.",
+        "insufficient_balance": "Dein Guthaben reicht dafür nicht.",
+        "round_in_progress": "Es läuft gerade eine Runde.",
+        "round_rejected": "Das geht gerade nicht.",
+        "timeout": "Der Server hat nicht geantwortet."
+      }
     }
   },
   "validation": {

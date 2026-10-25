@@ -14,9 +14,12 @@ const ACTION_TYPES: readonly ActionType[] = ['hit', 'stand', 'double', 'split'];
 /**
  * Lists what the hand to act may do and what each action costs, so the server
  * can reserve the stake before applying an action and clients only offer
- * valid ones. Returns `null` when no hand is left to act.
+ * valid ones. Returns `null` when no hand is left to act. It doesn't need the
+ * shoe, so it works on the public view of a round as well.
  */
-export function availableActions(round: RoundState): AvailableActions | null {
+export function availableActions(
+  round: Omit<RoundState, 'shoe'>,
+): AvailableActions | null {
   const { turn } = round;
 
   if (round.phase === 'settled' || !turn) {
@@ -57,7 +60,7 @@ export function publicView(round: RoundState): PublicRoundState {
  * phase are checked by the caller.
  */
 export function actionNotAllowed(
-  round: RoundState,
+  round: Omit<RoundState, 'shoe'>,
   ref: HandRef,
   type: ActionType,
 ): string | null {
@@ -91,11 +94,14 @@ export function actionNotAllowed(
   }
 }
 
-function handsOf(round: RoundState, seat: number): readonly Hand[] {
+function handsOf(
+  round: Omit<RoundState, 'shoe'>,
+  seat: number,
+): readonly Hand[] {
   return round.seats.find((entry) => entry.seat === seat)?.hands ?? [];
 }
 
-function handOf(round: RoundState, ref: HandRef): Hand {
+function handOf(round: Omit<RoundState, 'shoe'>, ref: HandRef): Hand {
   const hand = handsOf(round, ref.seat)[ref.hand];
 
   if (!hand) {

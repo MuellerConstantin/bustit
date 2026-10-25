@@ -64,6 +64,14 @@ describe('availableActions', () => {
     expect(availableActions(round)).toMatchObject({ seat: 0, hand: 1 });
   });
 
+  it('offers the same on the public view of the round', () => {
+    const { round } = start({ seats: [['8', '8']], dealer: ['7', '10'] });
+
+    expect(availableActions(publicView(round))).toEqual(
+      availableActions(round),
+    );
+  });
+
   it('returns null once the round is settled', () => {
     const { round } = start({ seats: [['10', '7']], dealer: ['A', 'K'] });
 

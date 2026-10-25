@@ -99,7 +99,11 @@ function TableOfPath() {
           </div>
         </div>
       </div>
-      <GameView />
+      <GameView
+        tableId={table.id}
+        minBet={table.minBet}
+        maxBet={table.maxBet}
+      />
     </div>
   );
 }

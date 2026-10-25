@@ -369,3 +369,5 @@ storybook-static/
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/nextjs,node,jetbrains+all,visualstudiocode,eclipse,netbeans,storybookjs,certificates
+
+.playwright-mcp

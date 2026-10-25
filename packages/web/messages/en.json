@@ -313,6 +313,98 @@
       "betsLabel": "Bets",
       "betRange": "{min, number} – {max, number}",
       "betRangeLabel": "{min, number} to {max, number} Bucks"
+    },
+    "playingCard": {
+      "hidden": "Face-down card",
+      "label": "{rank} of {suit}",
+      "suits": {
+        "clubs": "clubs",
+        "diamonds": "diamonds",
+        "hearts": "hearts",
+        "spades": "spades"
+      },
+      "ranks": {
+        "A": "Ace",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "5",
+        "6": "6",
+        "7": "7",
+        "8": "8",
+        "9": "9",
+        "10": "10",
+        "J": "Jack",
+        "Q": "Queen",
+        "K": "King"
+      }
+    },
+    "playerHand": {
+      "total": "{total}",
+      "totalSoft": "{total} (soft)",
+      "stakeLabel": "Stake",
+      "status": {
+        "bust": "Bust",
+        "blackjack": "Blackjack",
+        "stood": "Stands"
+      },
+      "outcome": {
+        "blackjack": "Blackjack +{net, number}",
+        "win": "Won +{net, number}",
+        "push": "Push",
+        "lose": "Lost −{stake, number}"
+      }
+    },
+    "dealerHand": {
+      "title": "Dealer",
+      "total": "{total}"
+    },
+    "seatPanel": {
+      "free": "Free",
+      "you": "You",
+      "sit": "Sit down",
+      "betLabel": "Bet"
+    },
+    "playControls": {
+      "spectator": "You are watching. Take a free seat to play.",
+      "actionsLabel": "Actions",
+      "actions": {
+        "hit": "Hit",
+        "stand": "Stand",
+        "double": "Double",
+        "split": "Split"
+      },
+      "stakeLabel": "Bet",
+      "placeBet": "Place bet",
+      "changeBet": "Change bet",
+      "deal": "Deal",
+      "leaveSeat": "Stand up"
+    },
+    "gameView": {
+      "connecting": "Connecting …",
+      "joining": "Joining the table …",
+      "disconnected": "The connection is lost. Reconnecting …",
+      "yourTurn": "Your turn.",
+      "turnOf": "{name}'s turn.",
+      "roundOver": "The round is over. Place your bets for the next one.",
+      "dealing": "Cards are about to be dealt.",
+      "placeBets": "Place your bets.",
+      "seconds": "{seconds} s",
+      "errors": {
+        "invalid_request": "The request was invalid.",
+        "table_not_found": "This table no longer exists.",
+        "not_joined": "You haven't joined this table.",
+        "seat_invalid": "This seat does not exist.",
+        "seat_taken": "The seat is already taken.",
+        "seat_empty": "The seat is empty.",
+        "already_seated": "You already sit at this table.",
+        "not_seated": "You do not sit at this table.",
+        "bet_out_of_limits": "The bet is outside the table's limits.",
+        "insufficient_balance": "Your balance doesn't cover that.",
+        "round_in_progress": "A round is being played right now.",
+        "round_rejected": "That isn't possible right now.",
+        "timeout": "The server did not answer."
+      }
     }
   },
   "validation": {
