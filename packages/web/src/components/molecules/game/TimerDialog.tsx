@@ -6,15 +6,17 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 /* The ring turns red for the last seconds. */
 const URGENT_SECONDS = 5;
 
-export type TitleTone = 'win' | 'lose' | 'push' | 'neutral';
+export type TitleTone = 'gold' | 'red' | 'plain';
+
+export type TimerTitle = { text: string; tone: TitleTone };
 
 interface TimerDialogProps {
   /** Without a timer, e.g. when the table doesn't wait for anyone, only the title shows. */
   progress: TimerProgress | null;
-  /** A word or two below the ring, left out when the table says it by itself. */
-  label?: string;
-  /** Lettering above the ring, which then shrinks to a small timer under it. */
-  title?: { text: string; tone: TitleTone };
+  /** Lettering above the ring, which says what the table waits for or how the round ended. */
+  title?: TimerTitle;
+  /** A wait that isn't pressing, like the pause until the next round, so the ring never turns red. */
+  isCalm?: boolean;
 }
 
 /*
@@ -29,29 +31,30 @@ const lettering = tv({
   base: `font-display text-4xl tracking-wider whitespace-nowrap uppercase -rotate-3 @5xl:text-6xl ${OUTLINED}`,
   variants: {
     tone: {
-      win: 'text-gold',
-      lose: 'text-destructive',
-      push: 'text-foreground',
-      neutral: 'text-foreground',
+      gold: 'text-gold',
+      red: 'text-destructive',
+      plain: 'text-foreground',
     },
   },
 });
 
 /**
- * The running timer with a round progress ring that empties as time runs out,
- * or the end of a round as lettering with the timer small below it. Purely
- * visual, screen readers get the status text instead.
+ * What the table waits for, as lettering with a round progress ring that
+ * empties as time runs out below it. Purely visual, screen readers get the
+ * status text instead.
  */
-export function TimerDialog({ progress, label, title }: TimerDialogProps) {
-  const isSmall = title !== undefined;
-  // The wait for the next round isn't urgent, so its ring stays calm.
+export function TimerDialog({
+  progress,
+  title,
+  isCalm = false,
+}: TimerDialogProps) {
   const isUrgent =
-    !isSmall && progress !== null && progress.secondsLeft <= URGENT_SECONDS;
+    !isCalm && progress !== null && progress.secondsLeft <= URGENT_SECONDS;
 
   return (
     <div
       aria-hidden
-      className="relative isolate flex flex-col items-center gap-2 px-6 py-4"
+      className="relative isolate flex flex-col items-center gap-5 px-6 py-1"
     >
       {/* A soft dark glow instead of a panel, so the lettering stands off the felt */}
       <span className="absolute -inset-6 -z-10 bg-[radial-gradient(closest-side,oklch(0_0_0/0.55),transparent)]" />
@@ -59,7 +62,7 @@ export function TimerDialog({ progress, label, title }: TimerDialogProps) {
         <span className={lettering({ tone: title.tone })}>{title.text}</span>
       )}
       {progress && (
-        <div className={isSmall ? 'relative size-14' : 'relative size-28'}>
+        <div className="relative size-14">
           <svg viewBox="0 0 72 72" className="size-full -rotate-90">
             <circle
               cx="36"
@@ -94,16 +97,11 @@ export function TimerDialog({ progress, label, title }: TimerDialogProps) {
             />
           </svg>
           <span
-            className={`absolute inset-0 flex items-center justify-center font-display tabular-nums ${OUTLINED} ${isSmall ? 'text-xl' : 'text-5xl'}`}
+            className={`absolute inset-0 flex items-center justify-center font-display text-xl tabular-nums ${OUTLINED}`}
           >
             {progress.secondsLeft}
           </span>
         </div>
-      )}
-      {label && !isSmall && (
-        <span className={`font-display text-2xl tracking-wide ${OUTLINED}`}>
-          {label}
-        </span>
       )}
     </div>
   );

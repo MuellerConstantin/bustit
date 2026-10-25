@@ -12,6 +12,7 @@ import { SeatPanel } from '@/components/molecules/game/SeatPanel';
 import { TableFelt } from '@/components/molecules/game/TableFelt';
 import { TableStage } from '@/components/molecules/game/TableStage';
 import {
+  type TimerTitle,
   type TitleTone,
   TimerDialog,
 } from '@/components/molecules/game/TimerDialog';
@@ -29,10 +30,10 @@ const FIT_BOTTOM_GAP = 16;
 const FIT_MIN_HEIGHT = 480;
 
 const VERDICT_TONES: Record<Verdict, TitleTone> = {
-  blackjack: 'win',
-  win: 'win',
-  push: 'push',
-  lose: 'lose',
+  blackjack: 'gold',
+  win: 'gold',
+  push: 'plain',
+  lose: 'red',
 };
 
 interface GameViewProps {
@@ -150,12 +151,17 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
     round?.phase === 'settled'
       ? verdictOf(round.results.filter((result) => result.seat === mySeat))
       : null;
-  const title =
-    round?.phase === 'settled'
-      ? verdict
-        ? { text: t(`verdict.${verdict}`), tone: VERDICT_TONES[verdict] }
-        : { text: t('verdict.over'), tone: 'neutral' as const }
-      : undefined;
+  const isSettled = round?.phase === 'settled';
+  /* The lettering names what the table waits for, or how the round ended. */
+  const title: TimerTitle | undefined = isSettled
+    ? verdict
+      ? { text: t(`verdict.${verdict}`), tone: VERDICT_TONES[verdict] }
+      : { text: t('verdict.over'), tone: 'plain' }
+    : state.timer?.kind === 'bet'
+      ? { text: t('timer.bet'), tone: 'plain' }
+      : state.timer?.kind === 'turn' && isMyTurn
+        ? { text: t('timer.turn'), tone: 'gold' }
+        : undefined;
 
   return (
     <div
@@ -203,13 +209,7 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
               <TimerDialog
                 progress={progress}
                 title={title}
-                label={
-                  state.timer?.kind === 'bet'
-                    ? t('timer.bet')
-                    : state.timer?.kind === 'turn' && isMyTurn
-                      ? t('timer.turn')
-                      : undefined
-                }
+                isCalm={isSettled}
               />
             )
           }
