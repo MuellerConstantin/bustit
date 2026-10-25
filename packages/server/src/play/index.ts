@@ -6,6 +6,7 @@ export {
   NotSeatedError,
   RoundInProgressError,
   RoundRejectedError,
+  SeatedElsewhereError,
   SeatEmptyError,
   SeatTakenError,
   TableAlreadyOpenError,

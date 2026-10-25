@@ -398,6 +398,7 @@
         "seat_taken": "Der Platz ist schon besetzt.",
         "seat_empty": "Der Platz ist leer.",
         "already_seated": "Du sitzt schon an diesem Tisch.",
+        "seated_elsewhere": "Du sitzt schon an einem anderen Tisch.",
         "not_seated": "Du sitzt nicht an diesem Tisch.",
         "bet_out_of_limits": "Der Einsatz liegt außerhalb der Limits des Tisches.",
         "insufficient_balance": "Dein Guthaben reicht dafür nicht.",

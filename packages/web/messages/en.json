@@ -398,6 +398,7 @@
         "seat_taken": "The seat is already taken.",
         "seat_empty": "The seat is empty.",
         "already_seated": "You already sit at this table.",
+        "seated_elsewhere": "You already sit at another table.",
         "not_seated": "You do not sit at this table.",
         "bet_out_of_limits": "The bet is outside the table's limits.",
         "insufficient_balance": "Your balance doesn't cover that.",

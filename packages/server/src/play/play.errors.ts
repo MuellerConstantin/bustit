@@ -52,6 +52,16 @@ export class AlreadySeatedError extends Error {
   }
 }
 
+export class SeatedElsewhereError extends Error {
+  constructor(
+    readonly userId: string,
+    readonly tableId: string,
+  ) {
+    super(`User ${userId} already sits at table ${tableId}`);
+    this.name = 'SeatedElsewhereError';
+  }
+}
+
 export class NotSeatedError extends Error {
   constructor(readonly userId: string) {
     super(`User ${userId} does not sit at this table`);

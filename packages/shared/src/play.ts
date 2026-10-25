@@ -59,6 +59,7 @@ export const playErrorCodeSchema = z.enum([
   'seat_taken',
   'seat_empty',
   'already_seated',
+  'seated_elsewhere',
   'not_seated',
   'bet_out_of_limits',
   'insufficient_balance',

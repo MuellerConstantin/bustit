@@ -37,6 +37,7 @@ import {
   NotSeatedError,
   RoundInProgressError,
   RoundRejectedError,
+  SeatedElsewhereError,
   SeatEmptyError,
   SeatTakenError,
   TableAlreadyOpenError,
@@ -51,16 +52,22 @@ export const ROUND_RNG = Symbol('ROUND_RNG');
 export const PLAY_TIMINGS = Symbol('PLAY_TIMINGS');
 
 export type PlayTimings = {
-  /** How long bets can be placed after the first one before the round is dealt. */
+  /**
+   * How long bets can be placed before the round is dealt. The window runs
+   * whenever someone sits at the table and no round is being played.
+   */
   readonly betWindowMs: number;
   /** How long a seat has to act before it is sent a stand. */
   readonly turnMs: number;
 };
 
 export const DEFAULT_PLAY_TIMINGS: PlayTimings = {
-  betWindowMs: 15_000,
+  betWindowMs: 30_000,
   turnMs: 20_000,
 };
+
+/** How many betting windows in a row a user can sit out before losing the seat. */
+export const MAX_IDLE_WINDOWS = 3;
 
 /** What an open table is set up with. */
 export type TableConfig = {
@@ -95,6 +102,8 @@ type PlayTable = {
   readonly bets: Map<number, number>;
   /** Users whose connection is gone but whose hands are still in the round. */
   readonly absent: Set<string>;
+  /** How many betting windows in a row a seated user has sat out. */
+  readonly idle: Map<string, number>;
   shoe: Shoe;
   round: ActiveRound | null;
   timer: ArmedTimer | null;
@@ -163,6 +172,7 @@ export class PlayService implements OnModuleDestroy {
       seats: Array.from({ length: seats }, () => null),
       bets: new Map(),
       absent: new Set(),
+      idle: new Map(),
       shoe: createShoe(rules, this.rng),
       round: null,
       timer: null,
@@ -214,6 +224,8 @@ export class PlayService implements OnModuleDestroy {
   /**
    * @throws TableNotOpenError if the table is not open.
    * @throws AlreadySeatedError if the user already sits at the table.
+   * @throws SeatedElsewhereError if the user sits at another table, which
+   *   includes a seat that is only kept until its round is settled.
    * @throws SeatTakenError if another user sits on the seat.
    */
   sit(tableId: string, seat: number, userId: string): Promise<void> {
@@ -226,11 +238,18 @@ export class PlayService implements OnModuleDestroy {
         throw new AlreadySeatedError(userId);
       }
 
+      const elsewhere = this.tablesOf(userId)[0];
+
+      if (elsewhere) {
+        throw new SeatedElsewhereError(userId, elsewhere);
+      }
+
       if (table.seats[seat]) {
         throw new SeatTakenError(seat);
       }
 
       table.seats[seat] = userId;
+      this.armBet(tableId, table);
       this.emit(tableId);
     });
   }
@@ -292,8 +311,8 @@ export class PlayService implements OnModuleDestroy {
 
   /**
    * Places the stake of the user's seat for the next round, replacing an
-   * earlier one. Nothing is booked before the round is dealt. The first bet
-   * opens the betting window, after which the round is dealt on its own.
+   * earlier one. Nothing is booked before the round is dealt, which happens
+   * on its own when the betting window ends.
    *
    * @throws NotSeatedError if the user does not sit at the table.
    * @throws RoundInProgressError while a round is being played.
@@ -454,6 +473,7 @@ export class PlayService implements OnModuleDestroy {
   }
 
   private free(tableId: string, table: PlayTable, seat: number): void {
+    table.idle.delete(table.seats[seat]!);
     table.seats[seat] = null;
     table.bets.delete(seat);
     this.armBet(tableId, table);
@@ -514,6 +534,7 @@ export class PlayService implements OnModuleDestroy {
       return id;
     });
 
+    this.countIdle(table, new Set(bets.map(({ seat }) => seat)));
     table.bets.clear();
 
     return this.store(tableId, table, roundId, update);
@@ -577,6 +598,7 @@ export class PlayService implements OnModuleDestroy {
         const seat = table.seats.indexOf(userId);
 
         if (seat !== -1) {
+          table.idle.delete(userId);
           table.seats[seat] = null;
           table.bets.delete(seat);
         }
@@ -585,9 +607,43 @@ export class PlayService implements OnModuleDestroy {
       table.absent.clear();
     }
 
-    this.armTurn(tableId, table);
+    if (round.phase === 'settled') {
+      // A window that was running when the round was dealt is over.
+      clearTimer(table);
+      this.armBet(tableId, table);
+    } else {
+      this.armTurn(tableId, table);
+    }
 
     return events;
+  }
+
+  /**
+   * Ends a betting window for everyone seated: those who bet are active,
+   * those who didn't have sat it out and lose their seat after too many in a
+   * row.
+   */
+  private countIdle(table: PlayTable, bettingSeats: ReadonlySet<number>): void {
+    table.seats.forEach((userId, seat) => {
+      if (!userId) {
+        return;
+      }
+
+      if (bettingSeats.has(seat)) {
+        table.idle.delete(userId);
+        return;
+      }
+
+      const sitOut = (table.idle.get(userId) ?? 0) + 1;
+
+      if (sitOut >= MAX_IDLE_WINDOWS) {
+        table.idle.delete(userId);
+        table.seats[seat] = null;
+        return;
+      }
+
+      table.idle.set(userId, sitOut);
+    });
   }
 
   /**
@@ -655,15 +711,16 @@ export class PlayService implements OnModuleDestroy {
   }
 
   /**
-   * Opens the betting window with the first bet and closes it when the bets
-   * are gone. Later bets don't extend a window that is running.
+   * Keeps a betting window running while someone sits at the table and no
+   * round is being played, and stops the timer when the table is empty. Bets
+   * don't extend a window that is running.
    */
   private armBet(tableId: string, table: PlayTable): void {
     if (table.round?.state.phase === 'playerTurns') {
       return;
     }
 
-    if (table.bets.size === 0) {
+    if (table.seats.every((userId) => userId === null)) {
       clearTimer(table);
       return;
     }
@@ -707,7 +764,7 @@ export class PlayService implements OnModuleDestroy {
       if (timer.kind === 'turn') {
         await this.standForTurn(tableId, table);
       } else {
-        await this.dealPlacedBets(tableId, table);
+        await this.endBetWindow(tableId, table);
       }
     }).catch((error: unknown) => {
       this.logger.error(
@@ -726,6 +783,26 @@ export class PlayService implements OnModuleDestroy {
     }
 
     this.emit(tableId, await this.apply(tableId, table, turn.seat, 'stand'));
+  }
+
+  /*
+   * Deals the placed bets, or counts the window as sat out when there are
+   * none. Either way the next window starts, also if dealing failed, so the
+   * table never waits for a timer that isn't there.
+   */
+  private async endBetWindow(tableId: string, table: PlayTable): Promise<void> {
+    try {
+      if (table.bets.size > 0) {
+        await this.dealPlacedBets(tableId, table);
+        return;
+      }
+
+      this.countIdle(table, new Set());
+    } finally {
+      this.armBet(tableId, table);
+    }
+
+    this.emit(tableId);
   }
 
   /** Deals the placed bets, leaving out the ones the balance doesn't cover. */

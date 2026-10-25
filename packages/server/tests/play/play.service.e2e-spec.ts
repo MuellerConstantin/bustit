@@ -16,6 +16,7 @@ import {
   type PlayTimings,
   RoundInProgressError,
   RoundRejectedError,
+  SeatedElsewhereError,
   SeatEmptyError,
   SeatTakenError,
   TableAlreadyOpenError,
@@ -246,6 +247,22 @@ describe('PlayService', () => {
       await expect(service.sit(TABLE, 1, 'alice')).rejects.toThrow(
         AlreadySeatedError,
       );
+    });
+
+    it('rejects a user who sits at another table until the seat is given up', async () => {
+      const service = newService('seats');
+
+      service.openTable('other', TABLE_CONFIG);
+      await service.sit(TABLE, 0, 'alice');
+
+      await expect(service.sit('other', 0, 'alice')).rejects.toThrow(
+        SeatedElsewhereError,
+      );
+
+      await service.leave(TABLE, 'alice');
+      await service.sit('other', 0, 'alice');
+
+      expect(service.publicState('other').seats[0]).toBe('alice');
     });
 
     it.each([-1, TABLE_CONFIG.seats, 1.5])(
@@ -492,20 +509,20 @@ describe('PlayService', () => {
   describe('timers', () => {
     const FAST: PlayTimings = { betWindowMs: 100, turnMs: 300 };
 
-    it('opens the betting window with the first bet and deals when it ends', async () => {
+    it('runs a betting window once someone sits and deals the bets when it ends', async () => {
       const service = newService('betting-window', FAST);
       const alice = await createPlayer(app);
       const dealt: boolean[] = [];
 
       service.onChange(({ events }) => dealt.push(!!events));
-      await service.sit(TABLE, 0, alice.id);
 
       expect(service.publicState(TABLE).deadline).toBeNull();
 
-      await service.placeBet(TABLE, alice.id, 10);
+      await service.sit(TABLE, 0, alice.id);
 
       expect(service.publicState(TABLE).deadline).not.toBeNull();
 
+      await service.placeBet(TABLE, alice.id, 10);
       await eventually(() => service.publicState(TABLE).round !== null);
 
       expect(service.publicState(TABLE).bets).toEqual([]);
@@ -528,6 +545,59 @@ describe('PlayService', () => {
       expect(service.publicState(TABLE).round).toBeNull();
     });
 
+    it('starts the next window when one ends without bets', async () => {
+      const service = newService('betting-window', FAST);
+      const alice = await createPlayer(app);
+
+      await service.sit(TABLE, 0, alice.id);
+
+      const first = service.publicState(TABLE).deadline;
+
+      await eventually(() => service.publicState(TABLE).deadline !== first);
+
+      const state = service.publicState(TABLE);
+
+      expect(state.deadline).not.toBeNull();
+      expect(state.seats[0]).toBe(alice.id);
+      expect(state.round).toBeNull();
+    });
+
+    it('frees the seat of a user who sits out three windows in a row', async () => {
+      const service = newService('betting-window', FAST);
+      const alice = await createPlayer(app);
+
+      await service.sit(TABLE, 0, alice.id);
+      await eventually(() => service.publicState(TABLE).seats[0] === null);
+
+      expect(service.publicState(TABLE).deadline).toBeNull();
+    });
+
+    it('keeps the seat of a user who bets, while the one who sits out loses it', async () => {
+      const service = newService('betting-window', FAST);
+      const alice = await createPlayer(app);
+      const bob = await createPlayer(app);
+
+      await service.sit(TABLE, 0, alice.id);
+      await service.sit(TABLE, 2, bob.id);
+
+      /* Alice bets in every window, bob never does. */
+      const giveUp = Date.now() + 5000;
+
+      while (service.publicState(TABLE).seats[2] !== null) {
+        if (Date.now() > giveUp) {
+          throw new Error('Bob kept his seat');
+        }
+
+        if (service.publicState(TABLE).round?.phase !== 'playerTurns') {
+          await service.placeBet(TABLE, alice.id, 10).catch(() => undefined);
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+
+      expect(service.publicState(TABLE).seats[0]).toBe(alice.id);
+    });
+
     it('sends a stand to every seat that lets its turn run out', async () => {
       const { service, alice, bob } = await roundInPlay(10, FAST);
 
@@ -536,8 +606,6 @@ describe('PlayService', () => {
       await eventually(
         () => service.publicState(TABLE).round?.phase === 'settled',
       );
-
-      expect(service.publicState(TABLE).deadline).toBeNull();
 
       for (const [seat, player] of [
         [0, alice],
