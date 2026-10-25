@@ -407,6 +407,18 @@ describe('PlayService', () => {
       expect(service.publicState(TABLE).bets).toEqual([]);
     });
 
+    it('does not deal a new round over the result of the last one', async () => {
+      const { service, alice } = await roundInPlay();
+
+      await playOut(service);
+      await expect(
+        service.startRound(TABLE, [{ seat: 0, stake: 10 }]),
+      ).rejects.toThrow(BettingClosedError);
+
+      expect(service.publicState(TABLE).round?.phase).toBe('settled');
+      expect(await entriesOf(alice.id, 'bet')).toHaveLength(1);
+    });
+
     it('clears a settled round once nobody sits at the table', async () => {
       const { service, alice, bob } = await roundInPlay();
 
@@ -587,6 +599,19 @@ describe('PlayService', () => {
       await eventually(() => service.publicState(TABLE).round === null);
 
       expect(service.publicState(TABLE).deadline).not.toBeNull();
+    });
+
+    it('accepts bets again once the next window has opened', async () => {
+      const { service, alice } = await roundInPlay(10, {
+        ...QUIET,
+        resultMs: 100,
+      });
+
+      await playOut(service);
+      await eventually(() => service.publicState(TABLE).round === null);
+      await service.placeBet(TABLE, alice.id, 10);
+
+      expect(service.publicState(TABLE).bets).toEqual([{ seat: 0, stake: 10 }]);
     });
 
     it('starts the next window when one ends without bets', async () => {
@@ -886,10 +911,14 @@ describe('PlayService', () => {
       expect(service.publicState(TABLE)).toEqual(before);
     });
 
-    it('deals the next round once the previous one is settled', async () => {
-      const { service, alice } = await roundInPlay();
+    it('deals the next round once the result of the previous one is gone', async () => {
+      const { service, alice } = await roundInPlay(10, {
+        ...QUIET,
+        resultMs: 100,
+      });
 
       await playOut(service);
+      await eventually(() => service.publicState(TABLE).round === null);
       await service.startRound(TABLE, [{ seat: 0, stake: 10 }]);
 
       expect(await entriesOf(alice.id, 'bet')).toHaveLength(2);

@@ -97,7 +97,7 @@ type ActiveRound = {
   readonly state: RoundState;
 };
 
-/** The one timer a table has running: the betting window or a seat's turn. */
+/** The one timer a table has running: the result hold, the betting window or a seat's turn. */
 type ArmedTimer = {
   readonly kind: 'bet' | 'turn' | 'result';
   readonly endsAt: number;
@@ -321,6 +321,7 @@ export class PlayService implements OnModuleDestroy {
    *
    * @throws NotSeatedError if the user does not sit at the table.
    * @throws RoundInProgressError while a round is being played.
+   * @throws BettingClosedError while the result of the last round is shown.
    * @throws BetOutOfLimitsError if the stake is outside the table's limits.
    */
   placeBet(tableId: string, userId: string, stake: number): Promise<void> {
@@ -345,10 +346,11 @@ export class PlayService implements OnModuleDestroy {
   /**
    * Deals a round to the seats with a bet and books the stakes, and the
    * payouts if the round is settled right away. The previous round must be
-   * settled.
+   * settled, and its result must have left the table already.
    *
    * @throws SeatEmptyError if a bet is placed on a free seat.
    * @throws RoundInProgressError while a round is being played.
+   * @throws BettingClosedError while the result of the last round is shown.
    * @throws BetOutOfLimitsError if a stake is outside the table's limits.
    * @throws RoundRejectedError if the engine rejects the bets.
    * @throws InsufficientBalanceError if a balance doesn't cover its stake.
@@ -373,6 +375,7 @@ export class PlayService implements OnModuleDestroy {
    *
    * @throws NotSeatedError if the user does not sit at the table.
    * @throws RoundInProgressError while a round is being played.
+   * @throws BettingClosedError while the result of the last round is shown.
    * @throws RoundRejectedError if no bet is placed.
    * @throws InsufficientBalanceError if a balance doesn't cover its stake.
    */
@@ -512,6 +515,10 @@ export class PlayService implements OnModuleDestroy {
   ): Promise<readonly RoundEvent[]> {
     if (table.round?.state.phase === 'playerTurns') {
       throw new RoundInProgressError(tableId);
+    }
+
+    if (table.round?.state.phase === 'settled') {
+      throw new BettingClosedError(tableId);
     }
 
     for (const { seat, stake } of bets) {
