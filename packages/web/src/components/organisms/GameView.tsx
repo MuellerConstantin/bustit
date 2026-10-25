@@ -1,7 +1,7 @@
 'use client';
 
 import { availableActions } from '@bustit/engine';
-import { Maximize, Minimize } from 'lucide-react';
+import { Maximize, Minimize, Volume2, VolumeX } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { Badge } from '@/components/atoms/Badge';
@@ -18,6 +18,7 @@ import {
   TimerDialog,
 } from '@/components/molecules/game/TimerDialog';
 import { PlayControls } from '@/components/organisms/game/PlayControls';
+import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { useOwnUser } from '@/hooks/useOwnUser';
 import { useTablePlay } from '@/hooks/useTablePlay';
@@ -59,6 +60,9 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
   const progress = useTimerProgress(state?.timer ?? null, clockOffsetMs);
   const rootRef = useRef<HTMLDivElement>(null);
   const { isFocused, toggle: toggleFullscreen } = useFullscreen(rootRef);
+  const { isOn: isMusicOn, toggle: toggleMusic } = useBackgroundMusic(
+    '/audio/jazz-n-brass-loop.ogg',
+  );
   const [fitHeight, setFitHeight] = useState<number | null>(null);
   const hasState = state !== null;
   const format = useFormatter();
@@ -170,16 +174,28 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
       }
       style={height ? { height } : undefined}
     >
-      <Button
-        variant="icon"
+      <div
         className={
-          isFocused ? 'absolute top-3 right-3' : 'absolute top-0 right-0'
+          isFocused
+            ? 'absolute top-3 right-3 flex gap-1'
+            : 'absolute top-0 right-0 flex gap-1'
         }
-        aria-label={isFocused ? t('exitFullscreen') : t('fullscreen')}
-        onPress={() => void toggleFullscreen()}
       >
-        {isFocused ? <Minimize /> : <Maximize />}
-      </Button>
+        <Button
+          variant="icon"
+          aria-label={isMusicOn ? t('musicOff') : t('musicOn')}
+          onPress={toggleMusic}
+        >
+          {isMusicOn ? <Volume2 /> : <VolumeX />}
+        </Button>
+        <Button
+          variant="icon"
+          aria-label={isFocused ? t('exitFullscreen') : t('fullscreen')}
+          onPress={() => void toggleFullscreen()}
+        >
+          {isFocused ? <Minimize /> : <Maximize />}
+        </Button>
+      </div>
       {user && (
         <p
           className={

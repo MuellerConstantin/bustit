@@ -394,6 +394,8 @@
       "balance": "Guthaben",
       "player": "Spieler",
       "spectator": "Zuschauer",
+      "musicOn": "Musik einschalten",
+      "musicOff": "Musik ausschalten",
       "fullscreen": "Vollbild",
       "exitFullscreen": "Vollbild beenden",
       "connecting": "Verbindung wird aufgebaut …",

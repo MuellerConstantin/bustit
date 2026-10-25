@@ -1,0 +1,8 @@
+jazz-n-brass-loop.ogg
+
+"Jazz n' brass loop" by Emma_MA
+Source: https://opengameart.org/content/jazz-n-brass-loop
+License: CC0 1.0 Universal (public domain dedication)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Converted from the original WAV to Ogg Vorbis, otherwise unchanged.

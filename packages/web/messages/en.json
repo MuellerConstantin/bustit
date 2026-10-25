@@ -394,6 +394,8 @@
       "balance": "Balance",
       "player": "Player",
       "spectator": "Spectator",
+      "musicOn": "Turn music on",
+      "musicOff": "Turn music off",
       "fullscreen": "Fullscreen",
       "exitFullscreen": "Exit fullscreen",
       "connecting": "Connecting …",
