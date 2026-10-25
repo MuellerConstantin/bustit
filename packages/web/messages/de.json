@@ -377,6 +377,7 @@
       "addToStake": "Einsatz um {value, number} erhöhen",
       "resetStake": "Einsatz zurücksetzen",
       "allIn": "All-in",
+      "minBetHint": "Mindesteinsatz: {min, number}",
       "stakeLabel": "Einsatz",
       "placeBet": "Einsatz setzen",
       "changeBet": "Einsatz ändern",

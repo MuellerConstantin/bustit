@@ -377,6 +377,7 @@
       "addToStake": "Raise the bet by {value, number}",
       "resetStake": "Reset the bet",
       "allIn": "All-in",
+      "minBetHint": "Minimum bet: {min, number}",
       "stakeLabel": "Bet",
       "placeBet": "Place bet",
       "changeBet": "Change bet",

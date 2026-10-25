@@ -69,7 +69,7 @@ export function PlayControls({
 }: PlayControlsProps) {
   const t = useTranslations('components.playControls');
   const format = useFormatter();
-  const [stake, setStake] = useState(bet ?? minBet);
+  const [stake, setStake] = useState(bet ?? 0);
   // Unknown balance gives 0, which the button's disabled check then catches.
   const allInStake = Math.min(maxBet, balance ?? 0);
 
@@ -127,32 +127,37 @@ export function PlayControls({
           />
         ))}
       </div>
-      <div className="flex items-center gap-1">
-        <span className="flex items-center gap-2 font-display text-3xl tabular-nums">
-          <Bill />
-          <span className="sr-only">{t('stakeLabel')}</span>
-          {format.number(stake)}
-        </span>
-        <Button
-          variant="icon"
-          aria-label={t('resetStake')}
-          isDisabled={isPending || stake === minBet}
-          onPress={() => setStake(minBet)}
-        >
-          <RotateCcw />
-        </Button>
-        <Button
-          variant="table"
-          isDisabled={
-            isPending ||
-            balance === undefined ||
-            balance < minBet ||
-            stake === allInStake
-          }
-          onPress={() => setStake(allInStake)}
-        >
-          {t('allIn')}
-        </Button>
+      <div className="flex flex-col">
+        <div className="flex items-center gap-1">
+          <span className="flex items-center gap-2 font-display text-3xl tabular-nums">
+            <Bill />
+            <span className="sr-only">{t('stakeLabel')}</span>
+            {format.number(stake)}
+          </span>
+          <Button
+            variant="icon"
+            aria-label={t('resetStake')}
+            isDisabled={isPending || stake === 0}
+            onPress={() => setStake(0)}
+          >
+            <RotateCcw />
+          </Button>
+          <Button
+            variant="table"
+            isDisabled={
+              isPending ||
+              balance === undefined ||
+              balance < minBet ||
+              stake === allInStake
+            }
+            onPress={() => setStake(allInStake)}
+          >
+            {t('allIn')}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {t('minBetHint', { min: minBet })}
+        </p>
       </div>
       <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
         <Button
@@ -160,6 +165,7 @@ export function PlayControls({
           isDisabled={
             isPending ||
             bet === stake ||
+            stake < minBet ||
             (balance !== undefined && stake > balance)
           }
           onPress={() => onBet(stake)}
