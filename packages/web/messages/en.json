@@ -374,6 +374,9 @@
         "double": "Double",
         "split": "Split"
       },
+      "chipsLabel": "Chips",
+      "addToStake": "Raise the bet by {value, number}",
+      "resetStake": "Reset the bet",
       "stakeLabel": "Bet",
       "placeBet": "Place bet",
       "changeBet": "Change bet",

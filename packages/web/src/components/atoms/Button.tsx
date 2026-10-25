@@ -10,7 +10,13 @@ import { focusRing } from './utils';
 
 export interface ButtonProps extends RACButtonProps {
   /** @default 'primary' */
-  variant?: 'primary' | 'secondary' | 'destructive' | 'icon';
+  variant?:
+    | 'primary'
+    | 'secondary'
+    | 'destructive'
+    | 'icon'
+    | 'table'
+    | 'table-primary';
 }
 
 const button = tv({
@@ -25,6 +31,11 @@ const button = tv({
       destructive:
         'bg-destructive text-destructive-foreground hover:bg-destructive/90 pressed:bg-destructive/80',
       icon: 'h-fit w-fit rounded-md border-none bg-transparent p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground pressed:bg-accent/80',
+      /* The buttons of the table: dark wood, and felt for the main move. */
+      table:
+        'table-button h-12 rounded-xl px-5 font-display text-xl tracking-wider text-foreground hover:brightness-125 pressed:translate-y-px pressed:brightness-90',
+      'table-primary':
+        'table-button table-button-felt h-12 rounded-xl px-5 font-display text-xl tracking-wider text-foreground hover:brightness-125 pressed:translate-y-px pressed:brightness-90',
     },
     isDisabled: {
       true: 'cursor-default bg-muted text-muted-foreground forced-colors:text-[GrayText]',
@@ -38,6 +49,11 @@ const button = tv({
       variant: 'icon',
       isDisabled: true,
       class: 'bg-transparent',
+    },
+    {
+      variant: ['table', 'table-primary'],
+      isDisabled: true,
+      class: 'opacity-50 saturate-50 hover:brightness-100',
     },
   ],
   defaultVariants: {

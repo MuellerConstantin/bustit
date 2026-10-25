@@ -1,11 +1,20 @@
 'use client';
 
 import type { ActionType, AvailableAction } from '@bustit/engine';
-import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import {
+  ChevronsUp,
+  CirclePlus,
+  Hand,
+  LogOut,
+  RotateCcw,
+  Split,
+} from 'lucide-react';
+import { useFormatter, useTranslations } from 'next-intl';
+import { type ReactNode, useState } from 'react';
 import { Bill } from '@/components/atoms/Bill';
+import { BET_CHIP_TONES, BetChip } from '@/components/atoms/BetChip';
 import { Button } from '@/components/atoms/Button';
-import { NumberField } from '@/components/atoms/NumberField';
+import { chipValues } from '@/lib/chips';
 
 interface PlayControlsProps {
   /** Whether the user sits at the table. */
@@ -32,7 +41,14 @@ interface PlayControlsProps {
   onStand: () => void;
 }
 
-/** What the user can do right now: place a bet and deal, or act on their hand. */
+const ACTION_ICONS: Record<ActionType, ReactNode> = {
+  hit: <CirclePlus aria-hidden />,
+  stand: <Hand aria-hidden />,
+  double: <ChevronsUp aria-hidden />,
+  split: <Split aria-hidden />,
+};
+
+/** What the user can do right now: build a bet with chips and deal, or act on their hand. */
 export function PlayControls({
   isSeated,
   isRoundRunning,
@@ -49,6 +65,7 @@ export function PlayControls({
   onStand,
 }: PlayControlsProps) {
   const t = useTranslations('components.playControls');
+  const format = useFormatter();
   const [stake, setStake] = useState(bet ?? minBet);
 
   if (!isSeated) {
@@ -57,17 +74,22 @@ export function PlayControls({
 
   if (isRoundRunning) {
     return isMyTurn ? (
-      <div role="group" aria-label={t('actionsLabel')} className="flex flex-wrap gap-2">
+      <div
+        role="group"
+        aria-label={t('actionsLabel')}
+        className="flex flex-wrap gap-2"
+      >
         {actions.map(({ type, additionalStake }) => (
           <Button
             key={type}
-            variant={type === 'stand' ? 'secondary' : 'primary'}
+            variant={type === 'hit' ? 'table-primary' : 'table'}
             isDisabled={isPending}
             onPress={() => onAct(type)}
           >
+            {ACTION_ICONS[type]}
             {t(`actions.${type}`)}
             {additionalStake > 0 && (
-              <span className="flex items-center gap-1 tabular-nums">
+              <span className="flex items-center gap-1 font-sans text-base tabular-nums">
                 <Bill />
                 {additionalStake}
               </span>
@@ -79,27 +101,62 @@ export function PlayControls({
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-3">
-      <NumberField
-        label={t('stakeLabel')}
-        value={stake}
-        onChange={setStake}
-        minValue={minBet}
-        maxValue={maxBet}
-        className="w-40"
-      />
-      <Button
-        isDisabled={isPending || Number.isNaN(stake)}
-        onPress={() => onBet(stake)}
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+      <div
+        role="group"
+        aria-label={t('chipsLabel')}
+        className="flex items-center gap-2"
       >
-        {bet === undefined ? t('placeBet') : t('changeBet')}
-      </Button>
-      <Button isDisabled={isPending || !hasBets} onPress={onDeal}>
-        {t('deal')}
-      </Button>
-      <Button variant="secondary" isDisabled={isPending} onPress={onStand}>
-        {t('leaveSeat')}
-      </Button>
+        {chipValues(minBet, maxBet).map((value, index) => (
+          <BetChip
+            key={value}
+            label={format.number(value, { notation: 'compact' })}
+            tone={BET_CHIP_TONES[index % BET_CHIP_TONES.length]}
+            aria-label={t('addToStake', { value })}
+            isDisabled={isPending || stake >= maxBet}
+            onPress={() => setStake((current) => Math.min(maxBet, current + value))}
+          />
+        ))}
+      </div>
+      <div className="flex items-center gap-1">
+        <span className="flex items-center gap-2 font-display text-3xl tabular-nums">
+          <Bill />
+          <span className="sr-only">{t('stakeLabel')}</span>
+          {format.number(stake)}
+        </span>
+        <Button
+          variant="icon"
+          aria-label={t('resetStake')}
+          isDisabled={isPending || stake === minBet}
+          onPress={() => setStake(minBet)}
+        >
+          <RotateCcw />
+        </Button>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+        <Button
+          variant="table-primary"
+          isDisabled={isPending || bet === stake}
+          onPress={() => onBet(stake)}
+        >
+          {bet === undefined ? t('placeBet') : t('changeBet')}
+        </Button>
+        <Button
+          variant="table"
+          isDisabled={isPending || !hasBets}
+          onPress={onDeal}
+        >
+          {t('deal')}
+        </Button>
+        <Button
+          variant="icon"
+          aria-label={t('leaveSeat')}
+          isDisabled={isPending}
+          onPress={onStand}
+        >
+          <LogOut />
+        </Button>
+      </div>
     </div>
   );
 }

@@ -374,6 +374,9 @@
         "double": "Verdoppeln",
         "split": "Teilen"
       },
+      "chipsLabel": "Chips",
+      "addToStake": "Einsatz um {value, number} erhöhen",
+      "resetStake": "Einsatz zurücksetzen",
       "stakeLabel": "Einsatz",
       "placeBet": "Einsatz setzen",
       "changeBet": "Einsatz ändern",

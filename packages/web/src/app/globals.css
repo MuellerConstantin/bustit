@@ -179,6 +179,27 @@ body {
 }
 
 /*
+ * A button of the table: the rail's wood under a light and a dark gradient, and
+ * the felt for the main move, each in a dark frame with a lower edge.
+ */
+.table-button {
+  background-image:
+    linear-gradient(oklch(1 0 0 / 0.14), transparent 45%, oklch(0 0 0 / 0.5)),
+    url(/images/table/rail-edge-h.webp);
+  background-size: 100% 100%;
+  box-shadow:
+    inset 0 0 0 2px oklch(0 0 0 / 0.7),
+    0 3px 0 oklch(0 0 0 / 0.6);
+}
+
+.table-button-felt {
+  background-image:
+    linear-gradient(oklch(1 0 0 / 0.14), transparent 45%, oklch(0 0 0 / 0.45)),
+    url(/images/table/felt.webp);
+  background-size: 100% 100%, 256px 256px;
+}
+
+/*
  * The cloth of a bar table: stains and burns over the felt, with the light of
  * a lamp hanging above its top edge, as a translucent glow.
  */
