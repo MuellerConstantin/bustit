@@ -10,7 +10,7 @@ const meta = {
   /* The lettering sizes follow the container, so the story gives it the wide table's. */
   decorators: [
     (Story) => (
-      <div className="@container table-cloth flex h-72 w-[48rem] items-center justify-center rounded-2xl">
+      <div className="table-cloth @container flex h-72 w-[48rem] items-center justify-center rounded-2xl">
         <Story />
       </div>
     ),

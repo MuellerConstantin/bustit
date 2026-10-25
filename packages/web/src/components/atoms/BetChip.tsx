@@ -17,6 +17,12 @@ export const BET_CHIP_TONES = [
 
 export type BetChipTone = (typeof BET_CHIP_TONES)[number];
 
+/** The tone of the chip at a position, running through the tones again after the last. */
+export function chipTone(index: number): BetChipTone {
+  // The modulo keeps the index inside the list, which the compiler can't see.
+  return BET_CHIP_TONES[index % BET_CHIP_TONES.length] ?? 'green';
+}
+
 interface BetChipProps extends Omit<RACButtonProps, 'children'> {
   /** The amount the chip stands for, shown on its face. */
   label: string;

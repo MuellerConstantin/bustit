@@ -199,7 +199,9 @@ body {
   background-image:
     linear-gradient(oklch(1 0 0 / 0.14), transparent 45%, oklch(0 0 0 / 0.45)),
     url(/images/table/felt.webp);
-  background-size: 100% 100%, 256px 256px;
+  background-size:
+    100% 100%,
+    256px 256px;
 }
 
 /*
@@ -211,5 +213,8 @@ body {
     radial-gradient(ellipse at 50% -25%, var(--lamp-glow), transparent 65%),
     url(/images/table/felt.webp),
     radial-gradient(ellipse at center, var(--felt-light), var(--felt) 75%);
-  background-size: 100% 100%, 768px 768px, 100% 100%;
+  background-size:
+    100% 100%,
+    768px 768px,
+    100% 100%;
 }

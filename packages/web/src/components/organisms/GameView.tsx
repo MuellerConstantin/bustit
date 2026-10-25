@@ -154,7 +154,9 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
     >
       <Button
         variant="icon"
-        className={isFocused ? 'absolute top-3 right-3' : 'absolute top-0 right-0'}
+        className={
+          isFocused ? 'absolute top-3 right-3' : 'absolute top-0 right-0'
+        }
         aria-label={isFocused ? t('exitFullscreen') : t('fullscreen')}
         onPress={() => void toggleFullscreen()}
       >

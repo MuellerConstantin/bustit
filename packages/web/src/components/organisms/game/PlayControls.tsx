@@ -12,7 +12,7 @@ import {
 import { useFormatter, useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
 import { Bill } from '@/components/atoms/Bill';
-import { BET_CHIP_TONES, BetChip } from '@/components/atoms/BetChip';
+import { BetChip, chipTone } from '@/components/atoms/BetChip';
 import { Button } from '@/components/atoms/Button';
 import { chipValues } from '@/lib/chips';
 
@@ -111,7 +111,7 @@ export function PlayControls({
           <BetChip
             key={value}
             label={format.number(value, { notation: 'compact' })}
-            tone={BET_CHIP_TONES[index % BET_CHIP_TONES.length]}
+            tone={chipTone(index)}
             aria-label={t('addToStake', { value })}
             isDisabled={isPending || stake >= maxBet}
             onPress={() =>

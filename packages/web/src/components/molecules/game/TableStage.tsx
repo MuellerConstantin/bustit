@@ -36,6 +36,10 @@ export function TableStage({ children }: TableStageProps) {
     }
 
     const hostObserver = new ResizeObserver(([entry]) => {
+      if (!entry) {
+        return;
+      }
+
       setHost({
         width: entry.contentRect.width,
         height: entry.contentRect.height,
