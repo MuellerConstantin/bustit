@@ -30,6 +30,7 @@ import type { AuthenticatedUser } from '../auth/index.js';
 import type { RealtimeSocketData } from '../infrastructure/realtime/index.js';
 import { InsufficientBalanceError } from '../ledger/index.js';
 import {
+  ActionTooEarlyError,
   AlreadySeatedError,
   BettingClosedError,
   BetOutOfLimitsError,
@@ -336,6 +337,7 @@ const failureCodes: readonly (readonly [
   [InsufficientBalanceError, 'insufficient_balance'],
   [RoundInProgressError, 'round_in_progress'],
   [BettingClosedError, 'betting_closed'],
+  [ActionTooEarlyError, 'action_too_early'],
   [RoundRejectedError, 'round_rejected'],
 ];
 

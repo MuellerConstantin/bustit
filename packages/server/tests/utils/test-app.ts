@@ -7,6 +7,11 @@ import { AppModule } from '../../src/app.module.js';
 import { configureApp } from '../../src/app.setup.js';
 import type { Database } from '../../src/infrastructure/database/index.js';
 import { LedgerModule } from '../../src/ledger/index.js';
+import {
+  DEFAULT_PLAY_TIMINGS,
+  PLAY_TIMINGS,
+  type PlayTimings,
+} from '../../src/play/index.js';
 
 export type TestApp = {
   readonly db: Database;
@@ -19,6 +24,8 @@ export type TestApp = {
 export type TestAppOptions = {
   /** Extra controllers, e.g. to exercise guards on routes of a test's own. */
   readonly controllers?: Type[];
+  /** Timings of the play service that differ from the defaults. */
+  readonly playTimings?: Partial<PlayTimings>;
 };
 
 /**
@@ -33,7 +40,10 @@ export async function createTestApp(
   const module = await Test.createTestingModule({
     imports: [AppModule, LedgerModule],
     controllers: options.controllers ?? [],
-  }).compile();
+  })
+    .overrideProvider(PLAY_TIMINGS)
+    .useValue({ ...DEFAULT_PLAY_TIMINGS, ...options.playTimings })
+    .compile();
   const db: Database = module.get(getDrizzleToken());
 
   await emptyDatabase(db);

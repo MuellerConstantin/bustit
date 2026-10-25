@@ -87,6 +87,14 @@ export class RoundInProgressError extends Error {
   }
 }
 
+/** The seat to act has not waited out the pause of its turn yet. */
+export class ActionTooEarlyError extends Error {
+  constructor(readonly tableId: string) {
+    super(`The seat to act at table ${tableId} has not waited out its pause`);
+    this.name = 'ActionTooEarlyError';
+  }
+}
+
 /** Bets are closed while the result of the last round is still shown. */
 export class BettingClosedError extends Error {
   constructor(readonly tableId: string) {

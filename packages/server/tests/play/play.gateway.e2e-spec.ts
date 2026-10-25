@@ -21,7 +21,7 @@ describe('play gateway (e2e)', () => {
   const latestState = new Map<Socket, TableStateMessage>();
 
   beforeAll(async () => {
-    app = await createTestApp();
+    app = await createTestApp({ playTimings: { actionPauseMs: 0 } });
 
     const server = app.http as Server;
     await new Promise<void>((resolve) => server.listen(0, resolve));

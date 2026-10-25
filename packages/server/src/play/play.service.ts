@@ -31,6 +31,7 @@ import type {
 import { InsufficientBalanceError, LedgerService } from '../ledger/index.js';
 import { TablesService } from '../tables/index.js';
 import {
+  ActionTooEarlyError,
   AlreadySeatedError,
   BettingClosedError,
   BetOutOfLimitsError,
@@ -66,6 +67,11 @@ export type PlayTimings = {
    */
   readonly resultMs: number;
   /**
+   * How long a seat has to wait after its turn starts before it may act. Clients
+   * use the pause to show what happened before the next action.
+   */
+  readonly actionPauseMs: number;
+  /**
    * How long the seat of a user whose connection dropped is kept for them to
    * come back. It is given up when a betting window ends after that.
    */
@@ -76,6 +82,7 @@ export const DEFAULT_PLAY_TIMINGS: PlayTimings = {
   betWindowMs: 30_000,
   turnMs: 20_000,
   resultMs: 10_000,
+  actionPauseMs: 1_500,
   reconnectMs: 15_000,
 };
 
@@ -122,6 +129,8 @@ type PlayTable = {
   shoe: Shoe;
   round: ActiveRound | null;
   timer: ArmedTimer | null;
+  /** When the seat to act may act, as a timestamp; `null` outside a turn. */
+  actionableAt: number | null;
   /** The calls waiting for their turn, see `exclusive`. */
   queue: Promise<unknown>;
 };
@@ -192,6 +201,7 @@ export class PlayService implements OnModuleDestroy {
       shoe: createShoe(rules, this.rng),
       round: null,
       timer: null,
+      actionableAt: null,
       queue: Promise.resolve(),
     });
   }
@@ -415,6 +425,10 @@ export class PlayService implements OnModuleDestroy {
     type: ActionType,
   ): Promise<readonly RoundEvent[]> {
     return this.exclusive(tableId, async (table) => {
+      if (table.actionableAt !== null && Date.now() < table.actionableAt) {
+        throw new ActionTooEarlyError(tableId);
+      }
+
       const events = await this.apply(
         tableId,
         table,
@@ -436,6 +450,10 @@ export class PlayService implements OnModuleDestroy {
       bets: betsOf(table),
       round: table.round ? publicView(table.round.state) : null,
       deadline: table.timer ? new Date(table.timer.endsAt).toISOString() : null,
+      actionableAt:
+        table.actionableAt === null
+          ? null
+          : new Date(table.actionableAt).toISOString(),
     };
   }
 
@@ -713,10 +731,12 @@ export class PlayService implements OnModuleDestroy {
     const round = table.round?.state;
 
     if (round?.phase !== 'playerTurns' || !round.turn) {
+      table.actionableAt = null;
       clearTimer(table);
       return;
     }
 
+    table.actionableAt = Date.now() + this.timings.actionPauseMs;
     const userId = table.seats[round.turn.seat];
 
     this.arm(

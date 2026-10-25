@@ -1,4 +1,5 @@
 export {
+  ActionTooEarlyError,
   AlreadySeatedError,
   BettingClosedError,
   BetOutOfLimitsError,

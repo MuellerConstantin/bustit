@@ -65,6 +65,7 @@ export const playErrorCodeSchema = z.enum([
   'insufficient_balance',
   'round_in_progress',
   'betting_closed',
+  'action_too_early',
   'round_rejected',
 ]);
 
@@ -82,6 +83,11 @@ export type PublicTableState = {
    * act during one.
    */
   readonly deadline: string | null;
+  /**
+   * When the seat to act may act, as an ISO timestamp. Actions before it are
+   * rejected, so clients can show the pause without guessing it.
+   */
+  readonly actionableAt: string | null;
 };
 
 /** A table's state with the names of the users on its seats. */

@@ -8,6 +8,7 @@ import {
   ledger,
 } from '../../src/ledger/index.js';
 import {
+  ActionTooEarlyError,
   AlreadySeatedError,
   BettingClosedError,
   BetOutOfLimitsError,
@@ -39,6 +40,7 @@ const QUIET: PlayTimings = {
   betWindowMs: 60_000,
   turnMs: 60_000,
   resultMs: 60_000,
+  actionPauseMs: 0,
   reconnectMs: 60_000,
 };
 
@@ -165,6 +167,7 @@ describe('PlayService', () => {
         bets: [],
         round: null,
         deadline: null,
+        actionableAt: null,
       });
     });
 
@@ -432,6 +435,27 @@ describe('PlayService', () => {
       expect(service.publicState(TABLE).round).toBeNull();
     });
 
+    it('rejects an action until the pause of its turn is over', async () => {
+      const { service, alice, bob } = await roundInPlay(10, {
+        ...QUIET,
+        actionPauseMs: 200,
+      });
+      const { seat } = service.publicState(TABLE).round!.turn!;
+      const player = seat === 0 ? alice : bob;
+
+      await expect(service.act(TABLE, player.id, 'stand')).rejects.toThrow(
+        ActionTooEarlyError,
+      );
+
+      await eventually(
+        () =>
+          Date.now() >= Date.parse(service.publicState(TABLE).actionableAt!),
+      );
+      await expect(
+        service.act(TABLE, player.id, 'stand'),
+      ).resolves.toBeDefined();
+    });
+
     it('lets only one of two simultaneous actions through', async () => {
       const { service, alice, bob } = await roundInPlay();
       const { seat } = service.publicState(TABLE).round!.turn!;
@@ -551,6 +575,7 @@ describe('PlayService', () => {
       betWindowMs: 100,
       turnMs: 300,
       resultMs: 100,
+      actionPauseMs: 0,
       reconnectMs: 60_000,
     };
 
@@ -692,6 +717,7 @@ describe('PlayService', () => {
         betWindowMs: 60_000,
         turnMs: 400,
         resultMs: 60_000,
+        actionPauseMs: 0,
         reconnectMs: 60_000,
       });
       const { seat } = service.publicState(TABLE).round!.turn!;
@@ -713,6 +739,7 @@ describe('PlayService', () => {
         betWindowMs: 100,
         turnMs: 60_000,
         resultMs: 100,
+        actionPauseMs: 0,
         reconnectMs: 60_000,
       });
       const alice = await createPlayer(app);
@@ -732,6 +759,7 @@ describe('PlayService', () => {
         betWindowMs: 100,
         turnMs: 60_000,
         resultMs: 100,
+        actionPauseMs: 0,
         reconnectMs: 0,
       });
       const alice = await createPlayer(app);
@@ -785,6 +813,7 @@ describe('PlayService', () => {
         betWindowMs: 100,
         turnMs: 60_000,
         resultMs: 100,
+        actionPauseMs: 0,
         reconnectMs: 0,
       });
 

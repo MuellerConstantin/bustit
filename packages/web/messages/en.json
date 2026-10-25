@@ -404,6 +404,7 @@
         "insufficient_balance": "Your balance doesn't cover that.",
         "round_in_progress": "A round is being played right now.",
         "betting_closed": "The result of the last round is still shown.",
+        "action_too_early": "It is not your turn to act yet.",
         "round_rejected": "That isn't possible right now.",
         "timeout": "The server did not answer."
       }

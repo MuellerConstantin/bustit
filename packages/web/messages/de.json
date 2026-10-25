@@ -404,6 +404,7 @@
         "insufficient_balance": "Dein Guthaben reicht dafür nicht.",
         "round_in_progress": "Es läuft gerade eine Runde.",
         "betting_closed": "Das Ergebnis der letzten Runde wird noch angezeigt.",
+        "action_too_early": "Du bist noch nicht an der Reihe.",
         "round_rejected": "Das geht gerade nicht.",
         "timeout": "Der Server hat nicht geantwortet."
       }

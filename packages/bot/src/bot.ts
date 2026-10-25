@@ -13,6 +13,7 @@ import { basicStrategy } from './strategy.js';
 
 const ACK_TIMEOUT_MS = 5_000;
 const SIT_RETRY_MS = 500;
+const ACTION_RETRY_MS = 200;
 
 /**
  * Plays one account at a table until its connection closes. The bot only
@@ -156,6 +157,18 @@ export async function runBot(
     const ack = await send(PLAY_EVENT.action, { tableId: table, type });
 
     if (!ack.ok) {
+      // The pause of the turn isn't over yet, so the action is retried with
+      // the latest state until the server accepts it.
+      if (ack.error === 'action_too_early') {
+        actedOn = null;
+        setTimeout(() => {
+          if (latest) {
+            play(latest).catch(onError);
+          }
+        }, ACTION_RETRY_MS);
+        return;
+      }
+
       log(`${type} rejected: ${ack.message}`);
       return;
     }
