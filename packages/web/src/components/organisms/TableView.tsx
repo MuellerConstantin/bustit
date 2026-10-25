@@ -1,5 +1,6 @@
 'use client';
 
+import { PLAY_EVENT } from '@bustit/shared';
 import { notFound, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
@@ -9,7 +10,10 @@ import { useTable } from '@/hooks/useTable';
 import { Armchair, LogOut } from 'lucide-react';
 import { Bill } from '../atoms/Bill';
 import { useRouter } from '@/i18n/navigation';
+import { useRealtime } from '@/providers/RealtimeProvider';
 import { GameView } from './GameView';
+
+const STAND_TIMEOUT_MS = 2000;
 
 function TableViewSkeleton() {
   const t = useTranslations('components.tableView');
@@ -40,6 +44,20 @@ function TableOfPath() {
   const t = useTranslations('components.tableView');
   const { id } = useParams<{ id: string }>();
   const { table, isLoading, isNotFound, error, reload } = useTable(id);
+  const { socket } = useRealtime();
+
+  /*
+   * Leaving the page alone keeps the seat for a while, so the exit stands up
+   * first. The lobby opens either way, a user without a seat just gets a
+   * failure back.
+   */
+  const exit = async () => {
+    await socket
+      .timeout(STAND_TIMEOUT_MS)
+      .emitWithAck(PLAY_EVENT.stand, { tableId: id })
+      .catch(() => undefined);
+    router.push('/');
+  };
 
   if (isLoading) {
     return <TableViewSkeleton />;
@@ -67,7 +85,7 @@ function TableOfPath() {
           <h1 className="line-clamp-2 font-display text-4xl tracking-wide sm:text-5xl">
             {table.name}
           </h1>
-          <Button variant="icon" onPress={() => router.push('/')}>
+          <Button variant="icon" onPress={() => void exit()}>
             <LogOut />
           </Button>
         </div>

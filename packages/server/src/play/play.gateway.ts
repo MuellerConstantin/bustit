@@ -84,19 +84,16 @@ export class PlayGateway
   }
 
   /**
-   * Seats of a user whose last connection to a table is gone are given up,
-   * see `PlayService.absent`. Another tab of the same user keeps them.
+   * Seats of a user whose last connection to a table is gone are kept for a
+   * while for them to come back, see `PlayService.absent`. Another tab of the
+   * same user keeps them anyway.
    */
   async handleDisconnect(socket: Socket): Promise<void> {
     const { user } = socket.data as RealtimeSocketData;
 
     try {
       for (const tableId of this.play.tablesOf(user.id)) {
-        const members = await this.server.in(roomOf(tableId)).fetchSockets();
-
-        if (!members.some((member) => connectedAs(member.data, user.id))) {
-          await this.play.absent(tableId, user.id);
-        }
+        await this.absentIfGone(tableId, user.id);
       }
     } catch (error) {
       this.logger.error(
@@ -128,9 +125,9 @@ export class PlayGateway
   }
 
   /**
-   * Frees the user's seat, if any, and leaves the table's room. A seat in
-   * the middle of a round is freed when the round is settled, its hands are
-   * played with a stand.
+   * Leaves the table's room. A seat is kept like for a dropped connection,
+   * because a client also leaves when it only rebuilds its view; giving the
+   * seat up takes a stand.
    */
   @SubscribeMessage(PLAY_EVENT.leave)
   leave(
@@ -142,8 +139,8 @@ export class PlayGateway
       body,
       tableRequestSchema,
       async ({ tableId }, user) => {
-        await this.play.absent(tableId, user.id);
         await socket.leave(roomOf(tableId));
+        await this.absentIfGone(tableId, user.id);
       },
     );
   }
@@ -163,7 +160,11 @@ export class PlayGateway
     );
   }
 
-  /** Frees the user's seat but stays at the table as a spectator. */
+  /**
+   * Frees the user's seat but stays at the table as a spectator. A seat in
+   * the middle of a round is freed when the round is settled, its hands are
+   * played with a stand.
+   */
   @SubscribeMessage(PLAY_EVENT.stand)
   stand(
     @ConnectedSocket() socket: Socket,
@@ -272,6 +273,15 @@ export class PlayGateway
       }
 
       return failure;
+    }
+  }
+
+  /** Marks the user absent unless another of their connections is at the table. */
+  private async absentIfGone(tableId: string, userId: string): Promise<void> {
+    const members = await this.server.in(roomOf(tableId)).fetchSockets();
+
+    if (!members.some((member) => connectedAs(member.data, userId))) {
+      await this.play.absent(tableId, userId);
     }
   }
 

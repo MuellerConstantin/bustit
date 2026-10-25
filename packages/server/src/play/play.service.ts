@@ -59,11 +59,17 @@ export type PlayTimings = {
   readonly betWindowMs: number;
   /** How long a seat has to act before it is sent a stand. */
   readonly turnMs: number;
+  /**
+   * How long the seat of a user whose connection dropped is kept for them to
+   * come back. It is given up when a betting window ends after that.
+   */
+  readonly reconnectMs: number;
 };
 
 export const DEFAULT_PLAY_TIMINGS: PlayTimings = {
   betWindowMs: 30_000,
   turnMs: 20_000,
+  reconnectMs: 15_000,
 };
 
 /** How many betting windows in a row a user can sit out before losing the seat. */
@@ -100,8 +106,10 @@ type PlayTable = {
   readonly seats: (string | null)[];
   /** The stake each seat has placed for the next round. */
   readonly bets: Map<number, number>;
-  /** Users whose connection is gone but whose hands are still in the round. */
-  readonly absent: Set<string>;
+  /** Users whose connection dropped, with the time it did. */
+  readonly absent: Map<string, number>;
+  /** Users who left the table but whose hands are still in the round. */
+  readonly leaving: Set<string>;
   /** How many betting windows in a row a seated user has sat out. */
   readonly idle: Map<string, number>;
   shoe: Shoe;
@@ -171,7 +179,8 @@ export class PlayService implements OnModuleDestroy {
       maxBet,
       seats: Array.from({ length: seats }, () => null),
       bets: new Map(),
-      absent: new Set(),
+      absent: new Map(),
+      leaving: new Set(),
       idle: new Map(),
       shoe: createShoe(rules, this.rng),
       round: null,
@@ -255,54 +264,43 @@ export class PlayService implements OnModuleDestroy {
   }
 
   /**
-   * Frees the user's seat together with the bet placed from it.
+   * Frees the user's seat together with the bet placed from it. During a
+   * round the hands are played on, with a stand as soon as one is to act,
+   * and the seat is freed once the round is settled.
    *
    * @throws NotSeatedError if the user does not sit at the table.
-   * @throws RoundInProgressError while the user's seat is still in a round.
    */
   leave(tableId: string, userId: string): Promise<void> {
     return this.exclusive(tableId, (table) => {
       const seat = seatOf(table, userId);
 
-      if (table.round?.state.phase === 'playerTurns') {
-        throw new RoundInProgressError(tableId);
-      }
-
-      this.free(tableId, table, seat);
-    });
-  }
-
-  /**
-   * The user's connection is gone. Between rounds the seat is freed. During
-   * a round the hands are played on, with a stand as soon as one is to act,
-   * and the seat is freed once the round is settled.
-   */
-  absent(tableId: string, userId: string): Promise<void> {
-    return this.exclusive(tableId, (table) => {
-      const seat = table.seats.indexOf(userId);
-
-      if (seat === -1) {
-        return;
-      }
-
-      const round = table.round?.state;
-
-      if (round?.phase !== 'playerTurns') {
+      if (table.round?.state.phase !== 'playerTurns') {
         this.free(tableId, table, seat);
         return;
       }
 
-      table.absent.add(userId);
+      table.leaving.add(userId);
 
-      if (round.turn?.seat === seat) {
+      if (table.round.state.turn?.seat === seat) {
         this.armTurn(tableId, table);
       }
-
-      this.emit(tableId);
     });
   }
 
-  /** The user is back, so their seat is kept after the round. */
+  /**
+   * The user is no longer at the table, e.g. because the connection dropped
+   * or the page was left without standing up. The seat, its bet and a turn
+   * keep running for them to come back, see `PlayTimings.reconnectMs`.
+   */
+  absent(tableId: string, userId: string): Promise<void> {
+    return this.exclusive(tableId, (table) => {
+      if (table.seats.includes(userId) && !table.absent.has(userId)) {
+        table.absent.set(userId, Date.now());
+      }
+    });
+  }
+
+  /** The user is back at the table, so their seat is kept. */
   present(tableId: string, userId: string): Promise<void> {
     return this.exclusive(tableId, (table) => {
       table.absent.delete(userId);
@@ -370,6 +368,7 @@ export class PlayService implements OnModuleDestroy {
   dealRound(tableId: string, userId: string): Promise<readonly RoundEvent[]> {
     return this.exclusive(tableId, async (table) => {
       seatOf(table, userId);
+      this.freeGone(table);
 
       try {
         const events = await this.start(tableId, table, betsOf(table));
@@ -473,11 +472,20 @@ export class PlayService implements OnModuleDestroy {
   }
 
   private free(tableId: string, table: PlayTable, seat: number): void {
-    table.idle.delete(table.seats[seat]!);
-    table.seats[seat] = null;
-    table.bets.delete(seat);
+    vacate(table, seat);
     this.armBet(tableId, table);
     this.emit(tableId);
+  }
+
+  /** Frees the seats of users whose connection dropped too long ago. */
+  private freeGone(table: PlayTable): void {
+    const since = Date.now() - this.timings.reconnectMs;
+
+    for (const [userId, droppedAt] of table.absent) {
+      if (droppedAt <= since) {
+        vacate(table, table.seats.indexOf(userId));
+      }
+    }
   }
 
   private dropBet(tableId: string, table: PlayTable, userId: string): void {
@@ -581,8 +589,8 @@ export class PlayService implements OnModuleDestroy {
 
   /**
    * Keeps the new round once the bookings are committed, frees the seats of
-   * users who left in the meantime once it is settled and sets the timer for
-   * what comes next.
+   * users who left the table in the meantime once it is settled and sets the
+   * timer for what comes next.
    */
   private store(
     tableId: string,
@@ -594,17 +602,9 @@ export class PlayService implements OnModuleDestroy {
     table.shoe = round.shoe;
 
     if (round.phase === 'settled') {
-      for (const userId of table.absent) {
-        const seat = table.seats.indexOf(userId);
-
-        if (seat !== -1) {
-          table.idle.delete(userId);
-          table.seats[seat] = null;
-          table.bets.delete(seat);
-        }
+      for (const userId of table.leaving) {
+        vacate(table, table.seats.indexOf(userId));
       }
-
-      table.absent.clear();
     }
 
     if (round.phase === 'settled') {
@@ -637,8 +637,7 @@ export class PlayService implements OnModuleDestroy {
       const sitOut = (table.idle.get(userId) ?? 0) + 1;
 
       if (sitOut >= MAX_IDLE_WINDOWS) {
-        table.idle.delete(userId);
-        table.seats[seat] = null;
+        vacate(table, seat);
         return;
       }
 
@@ -706,7 +705,7 @@ export class PlayService implements OnModuleDestroy {
       tableId,
       table,
       'turn',
-      userId && table.absent.has(userId) ? 0 : this.timings.turnMs,
+      userId && table.leaving.has(userId) ? 0 : this.timings.turnMs,
     );
   }
 
@@ -792,6 +791,8 @@ export class PlayService implements OnModuleDestroy {
    */
   private async endBetWindow(tableId: string, table: PlayTable): Promise<void> {
     try {
+      this.freeGone(table);
+
       if (table.bets.size > 0) {
         await this.dealPlacedBets(tableId, table);
         return;
@@ -830,6 +831,21 @@ function clearTimer(table: PlayTable): void {
     clearTimeout(table.timer.handle);
     table.timer = null;
   }
+}
+
+/** Frees the seat and forgets everything kept about its user. */
+function vacate(table: PlayTable, seat: number): void {
+  const userId = table.seats[seat];
+
+  if (!userId) {
+    return;
+  }
+
+  table.seats[seat] = null;
+  table.bets.delete(seat);
+  table.idle.delete(userId);
+  table.absent.delete(userId);
+  table.leaving.delete(userId);
 }
 
 function betsOf(table: PlayTable): Bet[] {

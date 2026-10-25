@@ -59,7 +59,11 @@ describe('RoundRecoveryService', () => {
         app.db,
         app.get(LedgerService),
         app.get(TablesService),
-        { betWindowMs: 60_000, turnMs: 60_000 },
+        {
+          betWindowMs: 60_000,
+          turnMs: 60_000,
+          reconnectMs: 60_000,
+        },
       );
       services.push(service);
 

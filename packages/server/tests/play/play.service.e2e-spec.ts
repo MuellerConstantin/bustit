@@ -34,7 +34,11 @@ let TABLE = '';
 const TABLE_CONFIG: TableConfig = { seats: 5, minBet: 5, maxBet: 10_000 };
 
 /** Timers that never fire within a test. */
-const QUIET: PlayTimings = { betWindowMs: 60_000, turnMs: 60_000 };
+const QUIET: PlayTimings = {
+  betWindowMs: 60_000,
+  turnMs: 60_000,
+  reconnectMs: 60_000,
+};
 
 /** Every player starts with the starting balance booked as signup bonus. */
 const STARTING_BALANCE = 1000;
@@ -378,12 +382,9 @@ describe('PlayService', () => {
       expect(service.publicState(TABLE)).toEqual(before);
     });
 
-    it('rejects leaving, closing and a second round while one is played', async () => {
-      const { service, alice } = await roundInPlay();
+    it('rejects closing and a second round while one is played', async () => {
+      const { service } = await roundInPlay();
 
-      await expect(service.leave(TABLE, alice.id)).rejects.toThrow(
-        RoundInProgressError,
-      );
       await expect(service.closeTable(TABLE)).rejects.toThrow(
         RoundInProgressError,
       );
@@ -507,7 +508,11 @@ describe('PlayService', () => {
   });
 
   describe('timers', () => {
-    const FAST: PlayTimings = { betWindowMs: 100, turnMs: 300 };
+    const FAST: PlayTimings = {
+      betWindowMs: 100,
+      turnMs: 300,
+      reconnectMs: 60_000,
+    };
 
     it('runs a betting window once someone sits and deals the bets when it ends', async () => {
       const service = newService('betting-window', FAST);
@@ -621,6 +626,7 @@ describe('PlayService', () => {
       const { service, alice, bob } = await roundInPlay(10, {
         betWindowMs: 60_000,
         turnMs: 400,
+        reconnectMs: 60_000,
       });
       const { seat } = service.publicState(TABLE).round!.turn!;
 
@@ -636,24 +642,56 @@ describe('PlayService', () => {
   });
 
   describe('absence', () => {
-    it('frees the seat and the bet of an absent user between rounds', async () => {
-      const service = newService('absence');
+    it('keeps the seat and the bet of an absent user to come back', async () => {
+      const service = newService('absence', {
+        betWindowMs: 100,
+        turnMs: 60_000,
+        reconnectMs: 60_000,
+      });
+      const alice = await createPlayer(app);
 
-      await service.sit(TABLE, 0, 'alice');
-      await service.placeBet(TABLE, 'alice', 10);
-      await service.absent(TABLE, 'alice');
+      await service.sit(TABLE, 0, alice.id);
+      await service.placeBet(TABLE, alice.id, 10);
+      await service.absent(TABLE, alice.id);
 
-      const state = service.publicState(TABLE);
+      await eventually(() => service.publicState(TABLE).round !== null);
 
-      expect(state.seats[0]).toBeNull();
-      expect(state.bets).toEqual([]);
-      expect(state.deadline).toBeNull();
+      expect(service.publicState(TABLE).seats[0]).toBe(alice.id);
+      expect(await entriesOf(alice.id, 'bet')).toMatchObject([{ delta: -10 }]);
     });
 
-    it('plays on for an absent user and frees the seat after the round', async () => {
+    it('frees the seat and the bet once the user stays away too long', async () => {
+      const service = newService('absence', {
+        betWindowMs: 100,
+        turnMs: 60_000,
+        reconnectMs: 0,
+      });
+      const alice = await createPlayer(app);
+
+      await service.sit(TABLE, 0, alice.id);
+      await service.placeBet(TABLE, alice.id, 10);
+      await service.absent(TABLE, alice.id);
+
+      await eventually(() => service.publicState(TABLE).seats[0] === null);
+
+      expect(service.publicState(TABLE).round).toBeNull();
+      expect(await entriesOf(alice.id, 'bet')).toEqual([]);
+    });
+
+    it('gives an absent user the full time for their turn', async () => {
+      const { service } = await roundInPlay();
+      const { round, seats } = service.publicState(TABLE);
+
+      await service.absent(TABLE, seats[round!.turn!.seat]!);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      expect(service.publicState(TABLE).round?.turn).toEqual(round?.turn);
+    });
+
+    it('plays on for a user who leaves during a round and frees the seat after it', async () => {
       const { service, alice, bob } = await roundInPlay();
 
-      await service.absent(TABLE, alice.id);
+      await service.leave(TABLE, alice.id);
 
       // Alice's hand is stood at once, bob takes his time.
       await eventually(() => {
@@ -674,14 +712,22 @@ describe('PlayService', () => {
       );
     });
 
-    it('keeps the seat of a user who is back before the round ends', async () => {
-      const { service, alice } = await roundInPlay();
+    it('keeps the seat of a user who is back', async () => {
+      const service = newService('absence', {
+        betWindowMs: 100,
+        turnMs: 60_000,
+        reconnectMs: 0,
+      });
 
-      await service.absent(TABLE, alice.id);
-      await service.present(TABLE, alice.id);
-      await playOut(service);
+      await service.sit(TABLE, 0, 'alice');
+      await service.absent(TABLE, 'alice');
+      await service.present(TABLE, 'alice');
 
-      expect(service.publicState(TABLE).seats[0]).toBe(alice.id);
+      const { deadline } = service.publicState(TABLE);
+
+      await eventually(() => service.publicState(TABLE).deadline !== deadline);
+
+      expect(service.publicState(TABLE).seats[0]).toBe('alice');
     });
 
     it('ignores a user who does not sit at the table', async () => {
