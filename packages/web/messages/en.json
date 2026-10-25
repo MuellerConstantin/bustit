@@ -396,7 +396,10 @@
       "roundOver": "The round is over.",
       "dealing": "Cards are about to be dealt.",
       "placeBets": "Place your bets.",
-      "seconds": "{seconds} s",
+      "timer": {
+        "bet": "Bets",
+        "turn": "Your turn"
+      },
       "errors": {
         "invalid_request": "The request was invalid.",
         "table_not_found": "This table no longer exists.",

@@ -114,7 +114,9 @@ export function PlayControls({
             tone={BET_CHIP_TONES[index % BET_CHIP_TONES.length]}
             aria-label={t('addToStake', { value })}
             isDisabled={isPending || stake >= maxBet}
-            onPress={() => setStake((current) => Math.min(maxBet, current + value))}
+            onPress={() =>
+              setStake((current) => Math.min(maxBet, current + value))
+            }
           />
         ))}
       </div>

@@ -10,11 +10,12 @@ import { DealerHand } from '@/components/molecules/game/DealerHand';
 import { SeatPanel } from '@/components/molecules/game/SeatPanel';
 import { TableFelt } from '@/components/molecules/game/TableFelt';
 import { TableStage } from '@/components/molecules/game/TableStage';
+import { TimerDialog } from '@/components/molecules/game/TimerDialog';
 import { PlayControls } from '@/components/organisms/game/PlayControls';
-import { useCountdown } from '@/hooks/useCountdown';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTablePlay } from '@/hooks/useTablePlay';
+import { useTimerProgress } from '@/hooks/useTimerProgress';
 
 /* From this window width the game fits the window's height instead of scrolling the page. */
 const FIT_MEDIA_QUERY = '(min-width: 64rem)';
@@ -43,7 +44,7 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
     act,
   } = useTablePlay(tableId);
   const [isPending, setIsPending] = useState(false);
-  const secondsLeft = useCountdown(state?.timer?.endsAt ?? null, clockOffsetMs);
+  const progress = useTimerProgress(state?.timer ?? null, clockOffsetMs);
   const rootRef = useRef<HTMLDivElement>(null);
   const { isFocused, toggle: toggleFullscreen } = useFullscreen(rootRef);
   const isWide = useMediaQuery(FIT_MEDIA_QUERY);
@@ -121,18 +122,42 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
       ref={rootRef}
       className={
         isFocused
-          ? 'fixed inset-0 z-50 flex flex-col gap-6 overflow-auto bg-background p-4'
-          : 'flex flex-col gap-6'
+          ? 'fixed inset-0 z-50 flex flex-col gap-6 overflow-auto bg-background p-4 pt-14'
+          : 'relative flex flex-col gap-6 pt-10'
       }
       style={height ? { height } : undefined}
     >
+      <Button
+        variant="icon"
+        className={isFocused ? 'absolute top-3 right-3' : 'absolute top-0 right-0'}
+        aria-label={isFocused ? t('exitFullscreen') : t('fullscreen')}
+        onPress={() => void toggleFullscreen()}
+      >
+        {isFocused ? <Minimize /> : <Maximize />}
+      </Button>
       {status !== 'connected' && (
         <p role="status" className="shrink-0 text-sm text-muted-foreground">
           {t('disconnected')}
         </p>
       )}
       <TableStage>
-        <TableFelt dealer={<DealerHand dealer={round?.dealer} />}>
+        <TableFelt
+          dealer={<DealerHand dealer={round?.dealer} />}
+          overlay={
+            progress && (
+              <TimerDialog
+                progress={progress}
+                label={
+                  state.timer?.kind === 'bet'
+                    ? t('timer.bet')
+                    : state.timer?.kind === 'turn' && isMyTurn
+                      ? t('timer.turn')
+                      : undefined
+                }
+              />
+            )
+          }
+        >
           {state.seats.map((seatUserId, seat) => (
             <SeatPanel
               key={seat}
@@ -148,35 +173,22 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
           ))}
         </TableFelt>
       </TableStage>
+      {/* The phase is on the table, so only screen readers get it as text */}
+      <p role="status" className="sr-only">
+        {isMyTurn
+          ? t('yourTurn')
+          : turnUserId
+            ? t('turnOf', { name: state.players[turnUserId] ?? '' })
+            : round?.phase === 'dealerTurn'
+              ? t('dealerTurn')
+              : round?.phase === 'settled'
+                ? t('roundOver')
+                : state.bets.length > 0
+                  ? t('dealing')
+                  : t('placeBets')}
+      </p>
       {/* A fixed height on wide windows, so the controls changing between phases don't resize the table */}
-      <div className="flex shrink-0 flex-col gap-3 lg:h-28">
-        <div className="flex items-start justify-between gap-3">
-          <p role="status" className="text-sm text-muted-foreground">
-            {isMyTurn
-              ? t('yourTurn')
-              : turnUserId
-                ? t('turnOf', { name: state.players[turnUserId] ?? '' })
-                : round?.phase === 'dealerTurn'
-                  ? t('dealerTurn')
-                  : round?.phase === 'settled'
-                    ? t('roundOver')
-                    : state.bets.length > 0
-                      ? t('dealing')
-                      : t('placeBets')}
-            {secondsLeft !== null && (
-              <span className="ml-2 tabular-nums">
-                {t('seconds', { seconds: secondsLeft })}
-              </span>
-            )}
-          </p>
-          <Button
-            variant="icon"
-            aria-label={isFocused ? t('exitFullscreen') : t('fullscreen')}
-            onPress={() => void toggleFullscreen()}
-          >
-            {isFocused ? <Minimize /> : <Maximize />}
-          </Button>
-        </div>
+      <div className="flex shrink-0 flex-col gap-3 lg:h-16">
         <PlayControls
           isSeated={mySeat !== -1}
           isRoundRunning={!bettingOpen}

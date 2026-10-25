@@ -396,7 +396,10 @@
       "roundOver": "Die Runde ist beendet.",
       "dealing": "Es wird gleich ausgeteilt.",
       "placeBets": "Setzt eure Einsätze.",
-      "seconds": "{seconds} s",
+      "timer": {
+        "bet": "Einsätze",
+        "turn": "Du bist dran"
+      },
       "errors": {
         "invalid_request": "Die Eingabe war ungültig.",
         "table_not_found": "Den Tisch gibt es nicht mehr.",
