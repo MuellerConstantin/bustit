@@ -381,6 +381,7 @@
       "leaveSeat": "Stand up"
     },
     "gameView": {
+      "table": "Game table",
       "connecting": "Connecting …",
       "joining": "Joining the table …",
       "disconnected": "The connection is lost. Reconnecting …",

@@ -33,6 +33,12 @@
   --input: oklch(1 0 0 / 0.22);
   --ring: oklch(1 0 0 / 0.45);
 
+  /* The table of a back-room bar: dim cloth lit by one warm lamp from above. */
+  --felt-light: oklch(0.36 0.07 150);
+  --felt: oklch(0.26 0.06 150);
+  --felt-line: oklch(1 0 0 / 0.14);
+  --lamp-glow: oklch(0.8 0.12 70 / 0.2);
+
   --radius: 0.625rem;
 
   --shadow-sm:
@@ -61,6 +67,7 @@
   --color-card-border: var(--card-border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-felt-line: var(--felt-line);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -78,4 +85,107 @@
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/*
+ * The wooden rail is the painted frame of the table. `--rail` is the thickness
+ * of the wood, and every piece is drawn at that thickness. The corner image is
+ * 648px wide at a 195px rail, so it spans 3.3 rails. The felt's inner corner
+ * radius follows the rail's inner curve.
+ */
+.table-rail {
+  --rail: 1.25rem;
+  --rail-span: calc(var(--rail) * 3.3);
+  --felt-radius: calc(var(--rail) * 0.67);
+  position: relative;
+  padding: var(--rail);
+  filter: drop-shadow(0 24px 30px oklch(0 0 0 / 0.7));
+}
+
+@media (min-width: 64rem) {
+  .table-rail {
+    --rail: 2.5rem;
+  }
+}
+
+.rail-corner,
+.rail-edge-h,
+.rail-edge-v {
+  position: absolute;
+  pointer-events: none;
+}
+
+.rail-corner {
+  width: var(--rail-span);
+  height: var(--rail-span);
+  background: url(/images/table/rail-corner.webp) no-repeat 0 0 / 100% 100%;
+}
+
+.rail-corner-tr {
+  top: 0;
+  right: 0;
+  transform: scaleX(-1);
+}
+
+.rail-corner-bl {
+  bottom: 0;
+  left: 0;
+  transform: scaleY(-1);
+}
+
+.rail-corner-br {
+  right: 0;
+  bottom: 0;
+  transform: scale(-1, -1);
+}
+
+.rail-corner-tl {
+  top: 0;
+  left: 0;
+}
+
+.rail-edge-h {
+  right: var(--rail-span);
+  left: var(--rail-span);
+  height: var(--rail);
+  background: url(/images/table/rail-edge-h.webp) repeat-x 0 0 / auto 100%;
+}
+
+.rail-edge-top {
+  top: 0;
+}
+
+/* Its outer edge faces down, so the piece is mirrored from the top one. */
+.rail-edge-bottom {
+  bottom: 0;
+  transform: scaleY(-1);
+}
+
+.rail-edge-v {
+  top: var(--rail-span);
+  bottom: var(--rail-span);
+  width: var(--rail);
+  background: url(/images/table/rail-edge-v.webp) repeat-y 0 0 / 100% auto;
+}
+
+.rail-edge-left {
+  left: 0;
+}
+
+/* The vertical piece is turned so its outer edge faces left, the right side needs it mirrored. */
+.rail-edge-right {
+  right: 0;
+  transform: scaleX(-1);
+}
+
+/*
+ * The cloth of a bar table: stains and burns over the felt, with the light of
+ * a lamp hanging above its top edge, as a translucent glow.
+ */
+.table-cloth {
+  background-image:
+    radial-gradient(ellipse at 50% -25%, var(--lamp-glow), transparent 65%),
+    url(/images/table/felt.webp),
+    radial-gradient(ellipse at center, var(--felt-light), var(--felt) 75%);
+  background-size: 100% 100%, 768px 768px, 100% 100%;
 }

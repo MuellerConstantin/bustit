@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Skeleton } from '@/components/atoms/Skeleton';
 import { DealerHand } from '@/components/molecules/game/DealerHand';
 import { SeatPanel } from '@/components/molecules/game/SeatPanel';
+import { TableFelt } from '@/components/molecules/game/TableFelt';
 import { PlayControls } from '@/components/organisms/game/PlayControls';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useTablePlay } from '@/hooks/useTablePlay';
@@ -75,8 +76,7 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
           {t('disconnected')}
         </p>
       )}
-      <DealerHand dealer={round?.dealer} />
-      <div className="flex flex-wrap gap-4">
+      <TableFelt dealer={<DealerHand dealer={round?.dealer} />}>
         {state.seats.map((seatUserId, seat) => (
           <SeatPanel
             key={seat}
@@ -90,7 +90,7 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
             onSit={() => void run(() => sit(seat))}
           />
         ))}
-      </div>
+      </TableFelt>
       <div className="flex flex-col gap-3">
         <p role="status" className="text-sm text-muted-foreground">
           {isMyTurn

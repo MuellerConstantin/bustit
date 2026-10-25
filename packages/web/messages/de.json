@@ -381,6 +381,7 @@
       "leaveSeat": "Aufstehen"
     },
     "gameView": {
+      "table": "Spieltisch",
       "connecting": "Verbindung wird aufgebaut …",
       "joining": "Tisch wird betreten …",
       "disconnected": "Die Verbindung ist unterbrochen. Sie wird neu aufgebaut …",

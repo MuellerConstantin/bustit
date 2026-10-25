@@ -25,7 +25,7 @@ interface SeatPanelProps {
 }
 
 const panel = tv({
-  base: 'flex min-w-48 flex-1 flex-col gap-3 rounded-2xl border bg-card p-4 backdrop-blur-xl',
+  base: 'flex w-full flex-col gap-3 rounded-2xl border bg-card p-2 backdrop-blur-xl lg:w-44',
   variants: {
     isTurn: {
       true: 'border-primary ring-2 ring-primary',
