@@ -56,7 +56,11 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
     );
   }
 
-  const { round } = state;
+  // A settled round shows its results until bets for the next one come in.
+  const round =
+    state.round?.phase === 'settled' && state.bets.length > 0
+      ? null
+      : state.round;
   const mySeat = userId ? state.seats.indexOf(userId) : -1;
   const runningRound = round?.phase === 'playerTurns' ? round : null;
   const turn = runningRound?.turn ?? null;
