@@ -326,6 +326,7 @@ export class PlayService implements OnModuleDestroy {
 
       assertWithinLimits(table, stake);
       table.bets.set(seat, stake);
+      clearSettled(table);
       this.armBet(tableId, table);
       this.emit(tableId);
     });
@@ -721,6 +722,7 @@ export class PlayService implements OnModuleDestroy {
 
     if (table.seats.every((userId) => userId === null)) {
       clearTimer(table);
+      clearSettled(table);
       return;
     }
 
@@ -791,6 +793,7 @@ export class PlayService implements OnModuleDestroy {
    */
   private async endBetWindow(tableId: string, table: PlayTable): Promise<void> {
     try {
+      clearSettled(table);
       this.freeGone(table);
 
       if (table.bets.size > 0) {
@@ -830,6 +833,17 @@ function clearTimer(table: PlayTable): void {
   if (table.timer) {
     clearTimeout(table.timer.handle);
     table.timer = null;
+  }
+}
+
+/**
+ * Takes a settled round off the table. It stays for its results to be seen
+ * until the first bet for the next one, the end of the betting window after
+ * it or until nobody sits at the table anymore.
+ */
+function clearSettled(table: PlayTable): void {
+  if (table.round?.state.phase === 'settled') {
+    table.round = null;
   }
 }
 

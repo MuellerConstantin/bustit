@@ -393,6 +393,30 @@ describe('PlayService', () => {
       ).rejects.toThrow(RoundInProgressError);
     });
 
+    it('clears a settled round with the first bet for the next one', async () => {
+      const { service, alice } = await roundInPlay();
+
+      await playOut(service);
+      expect(service.publicState(TABLE).round?.phase).toBe('settled');
+
+      await service.placeBet(TABLE, alice.id, 10);
+
+      expect(service.publicState(TABLE).round).toBeNull();
+    });
+
+    it('clears a settled round once nobody sits at the table', async () => {
+      const { service, alice, bob } = await roundInPlay();
+
+      await playOut(service);
+      await service.leave(TABLE, alice.id);
+
+      expect(service.publicState(TABLE).round?.phase).toBe('settled');
+
+      await service.leave(TABLE, bob.id);
+
+      expect(service.publicState(TABLE).round).toBeNull();
+    });
+
     it('lets only one of two simultaneous actions through', async () => {
       const { service, alice, bob } = await roundInPlay();
       const { seat } = service.publicState(TABLE).round!.turn!;
@@ -550,6 +574,17 @@ describe('PlayService', () => {
       expect(service.publicState(TABLE).round).toBeNull();
     });
 
+    it('clears a settled round when the betting window after it ends', async () => {
+      const { service } = await roundInPlay(10, FAST);
+
+      await eventually(
+        () => service.publicState(TABLE).round?.phase === 'settled',
+      );
+      await eventually(() => service.publicState(TABLE).round === null);
+
+      expect(service.publicState(TABLE).deadline).not.toBeNull();
+    });
+
     it('starts the next window when one ends without bets', async () => {
       const service = newService('betting-window', FAST);
       const alice = await createPlayer(app);
@@ -612,13 +647,14 @@ describe('PlayService', () => {
         () => service.publicState(TABLE).round?.phase === 'settled',
       );
 
-      for (const [seat, player] of [
-        [0, alice],
-        [2, bob],
-      ] as const) {
-        expect(await balanceOf(player.id)).toBe(
-          STARTING_BALANCE - 10 + payoutOf(service, seat),
-        );
+      // Read before awaiting, the next betting window clears the round.
+      const payouts = [
+        [alice, payoutOf(service, 0)],
+        [bob, payoutOf(service, 2)],
+      ] as const;
+
+      for (const [player, payout] of payouts) {
+        expect(await balanceOf(player.id)).toBe(STARTING_BALANCE - 10 + payout);
       }
     });
 
