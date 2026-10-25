@@ -49,9 +49,5 @@ Runs the scenario and invariant tests.
 npm run test -w @bustit/engine
 ```
 
-Plays millions of hands by basic strategy and checks the result against the published house edge
-for the rules. It takes a while, so it isn't part of `test`.
-
-```bash
-npm run test:sim -w @bustit/engine
-```
+The house edge simulation, which checks the rules against the published house edge, lives in the bot
+package, as it needs the basic strategy. See [`@bustit/bot`](../bot).

@@ -42,6 +42,7 @@ and the checks a change has to pass. This file doesn't repeat them.
 ├── packages/
 │   ├── engine/         # @bustit/engine: blackjack rules as pure functions
 │   ├── shared/         # @bustit/shared: Zod schemas and types for server and web
+│   ├── bot/            # @bustit/bot: plays the game as a client, by basic strategy
 │   ├── server/         # @bustit/server: NestJS game server
 │   │   ├── src/        # One folder per feature, technical concerns in infrastructure/
 │   │   ├── drizzle/    # Generated migrations, committed
@@ -124,7 +125,7 @@ folders themselves for that.
   `*.spec.ts` and run without any external service. Tests against Postgres
   are named `*.e2e-spec.ts` and run through `test:e2e`. Long-running
   simulations are named `*.sim.ts` and run only through `test:sim`, not with
-  every `test`. The engine's house edge simulation plays millions of hands by
+  every `test`. The house edge simulation of the bot package plays millions of hands by
   basic strategy and checks the result against the published house edge for
   the rules, which catches rules that are wrong yet consistent.
 - **Real Postgres in tests**: E2e tests run against a throwaway Postgres from
