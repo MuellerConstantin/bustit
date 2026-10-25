@@ -14,7 +14,7 @@ import { type ReactNode, useState } from 'react';
 import { Bill } from '@/components/atoms/Bill';
 import { BetChip, chipTone } from '@/components/atoms/BetChip';
 import { Button } from '@/components/atoms/Button';
-import { chipValues } from '@/lib/chips';
+import { CHIP_VALUES } from '@/lib/chips';
 
 interface PlayControlsProps {
   /** Whether the user sits at the table. */
@@ -70,6 +70,8 @@ export function PlayControls({
   const t = useTranslations('components.playControls');
   const format = useFormatter();
   const [stake, setStake] = useState(bet ?? minBet);
+  // Unknown balance gives 0, which the button's disabled check then catches.
+  const allInStake = Math.min(maxBet, balance ?? 0);
 
   if (!isSeated) {
     return null;
@@ -110,7 +112,7 @@ export function PlayControls({
         aria-label={t('chipsLabel')}
         className="flex items-center gap-2"
       >
-        {chipValues(minBet, maxBet).map((value, index) => (
+        {CHIP_VALUES.map((value, index) => (
           <BetChip
             key={value}
             label={format.number(value, { notation: 'compact' })}
@@ -118,7 +120,7 @@ export function PlayControls({
             aria-label={t('addToStake', { value })}
             // A chip the balance can't cover is locked, not just left out.
             isLocked={balance !== undefined && stake + value > balance}
-            isDisabled={isPending || stake >= maxBet}
+            isDisabled={isPending || stake >= maxBet || value > maxBet}
             onPress={() =>
               setStake((current) => Math.min(maxBet, current + value))
             }
@@ -138,6 +140,18 @@ export function PlayControls({
           onPress={() => setStake(minBet)}
         >
           <RotateCcw />
+        </Button>
+        <Button
+          variant="table"
+          isDisabled={
+            isPending ||
+            balance === undefined ||
+            balance < minBet ||
+            stake === allInStake
+          }
+          onPress={() => setStake(allInStake)}
+        >
+          {t('allIn')}
         </Button>
       </div>
       <div className="flex flex-wrap items-center gap-2 sm:ml-auto">

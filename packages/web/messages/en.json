@@ -376,6 +376,7 @@
       "chipsLabel": "Chips",
       "addToStake": "Raise the bet by {value, number}",
       "resetStake": "Reset the bet",
+      "allIn": "All-in",
       "stakeLabel": "Bet",
       "placeBet": "Place bet",
       "changeBet": "Change bet",
