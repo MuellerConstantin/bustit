@@ -51,48 +51,67 @@ export function SeatPanel({
   const t = useTranslations('components.seatPanel');
 
   return (
-    <section
-      className={panel({ isTurn: turnHand !== null, isFree: !username })}
-    >
-      <header className="flex items-center gap-2">
-        {username ? (
-          <>
-            <Avatar name={username} />
-            <span className="truncate text-sm font-semibold">{username}</span>
-            {isYou && <Badge variant="primary">{t('you')}</Badge>}
-            {bet !== undefined && (
-              <span className="ml-auto flex shrink-0 items-center gap-1 text-sm tabular-nums">
-                <Bill />
-                <span className="sr-only">{t('betLabel')}</span>
-                {bet}
-              </span>
-            )}
-          </>
-        ) : (
-          <>
-            <Armchair className="size-5 text-muted-foreground" aria-hidden />
-            <span className="text-sm text-muted-foreground">{t('free')}</span>
-          </>
-        )}
-      </header>
-      {hands.map((hand, index) => (
-        <div
-          key={index}
-          className={
-            turnHand === index ? 'rounded-lg bg-primary/10 p-1' : 'p-1'
-          }
+    // The badge sits on the panel's border, which the panel's scrolling would clip.
+    <div className="relative">
+      {username && isYou && (
+        <Badge
+          variant="primary"
+          className="absolute -top-2.5 right-3 z-10 border-transparent bg-primary text-primary-foreground"
         >
-          <PlayerHand
-            hand={hand}
-            result={results.find((result) => result.hand === index)}
-          />
-        </div>
-      ))}
-      {!username && canSit && (
-        <Button variant="secondary" onPress={onSit} className="mt-auto">
-          {t('sit')}
-        </Button>
+          {t('you')}
+        </Badge>
       )}
-    </section>
+      <section
+        className={panel({ isTurn: turnHand !== null, isFree: !username })}
+      >
+        <header className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            {username ? (
+              <>
+                <Avatar name={username} />
+                <span className="truncate text-sm font-semibold">
+                  {username}
+                </span>
+              </>
+            ) : (
+              <>
+                <Armchair
+                  className="size-5 text-muted-foreground"
+                  aria-hidden
+                />
+                <span className="text-sm text-muted-foreground">
+                  {t('free')}
+                </span>
+              </>
+            )}
+          </div>
+          {username && bet !== undefined && (
+            <span className="flex items-center gap-1 text-sm tabular-nums">
+              <Bill />
+              <span className="sr-only">{t('betLabel')}</span>
+              {bet}
+            </span>
+          )}
+        </header>
+        {hands.map((hand, index) => (
+          <div
+            key={index}
+            className={
+              turnHand === index ? 'rounded-lg bg-primary/10 p-1' : 'p-1'
+            }
+          >
+            <PlayerHand
+              hand={hand}
+              result={results.find((result) => result.hand === index)}
+            />
+          </div>
+        ))}
+        {!username && canSit && (
+          <Button variant="secondary" onPress={onSit} className="mt-auto">
+            {t('sit')}
+          </Button>
+        )}
+      </section>
+    </div>
   );
 }
