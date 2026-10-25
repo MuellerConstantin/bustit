@@ -10,17 +10,28 @@ import { DealerHand } from '@/components/molecules/game/DealerHand';
 import { SeatPanel } from '@/components/molecules/game/SeatPanel';
 import { TableFelt } from '@/components/molecules/game/TableFelt';
 import { TableStage } from '@/components/molecules/game/TableStage';
-import { TimerDialog } from '@/components/molecules/game/TimerDialog';
+import {
+  type TitleTone,
+  TimerDialog,
+} from '@/components/molecules/game/TimerDialog';
 import { PlayControls } from '@/components/organisms/game/PlayControls';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTablePlay } from '@/hooks/useTablePlay';
 import { useTimerProgress } from '@/hooks/useTimerProgress';
+import { type Verdict, verdictOf } from '@/lib/verdict';
 
 /* From this window width the game fits the window's height instead of scrolling the page. */
 const FIT_MEDIA_QUERY = '(min-width: 64rem)';
 const FIT_BOTTOM_GAP = 16;
 const FIT_MIN_HEIGHT = 480;
+
+const VERDICT_TONES: Record<Verdict, TitleTone> = {
+  blackjack: 'win',
+  win: 'win',
+  push: 'push',
+  lose: 'lose',
+};
 
 interface GameViewProps {
   tableId: string;
@@ -116,6 +127,20 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
   const isMyTurn = turn !== null && turn.seat === mySeat;
   const turnUserId = turn ? state.seats[turn.seat] : null;
   const height = isWide && !isFocused ? fitHeight : null;
+  /*
+   * Once the round is settled the dialog says how it went: for the user if they
+   * played, otherwise only that it is over, which is all a watcher can say.
+   */
+  const verdict =
+    round?.phase === 'settled'
+      ? verdictOf(round.results.filter((result) => result.seat === mySeat))
+      : null;
+  const title =
+    round?.phase === 'settled'
+      ? verdict
+        ? { text: t(`verdict.${verdict}`), tone: VERDICT_TONES[verdict] }
+        : { text: t('verdict.over'), tone: 'neutral' as const }
+      : undefined;
 
   return (
     <div
@@ -144,9 +169,10 @@ export function GameView({ tableId, minBet, maxBet }: GameViewProps) {
         <TableFelt
           dealer={<DealerHand dealer={round?.dealer} />}
           overlay={
-            progress && (
+            (progress || title) && (
               <TimerDialog
                 progress={progress}
+                title={title}
                 label={
                   state.timer?.kind === 'bet'
                     ? t('timer.bet')

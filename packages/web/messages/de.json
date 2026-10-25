@@ -400,6 +400,13 @@
         "bet": "Einsätze",
         "turn": "Du bist dran"
       },
+      "verdict": {
+        "blackjack": "Blackjack!",
+        "win": "Gewonnen!",
+        "lose": "Verloren!",
+        "push": "Unentschieden",
+        "over": "Rundenende"
+      },
       "errors": {
         "invalid_request": "Die Eingabe war ungültig.",
         "table_not_found": "Den Tisch gibt es nicht mehr.",

@@ -400,6 +400,13 @@
         "bet": "Bets",
         "turn": "Your turn"
       },
+      "verdict": {
+        "blackjack": "Blackjack!",
+        "win": "You win!",
+        "lose": "You lose!",
+        "push": "Push",
+        "over": "Round over"
+      },
       "errors": {
         "invalid_request": "The request was invalid.",
         "table_not_found": "This table no longer exists.",
