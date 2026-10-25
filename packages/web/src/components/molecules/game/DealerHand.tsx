@@ -12,18 +12,19 @@ export function DealerHand({ dealer }: DealerHandProps) {
   const t = useTranslations('components.dealerHand');
 
   return (
-    <section className="flex min-h-32 flex-col items-center gap-2">
+    <section className="flex h-40 flex-col items-center gap-2">
       <h2 className="font-display text-2xl tracking-wide">{t('title')}</h2>
       {dealer && (
         <>
-          <ul className="flex gap-1">
+          {/* Overlapping cards keep the hand in one row and the section at a fixed height */}
+          <ul className="flex">
             {dealer.cards.map((card, index) => (
-              <li key={index}>
+              <li key={index} className="-ml-6 first:ml-0">
                 <PlayingCard card={card} />
               </li>
             ))}
             {dealer.holeCardHidden && (
-              <li>
+              <li className="-ml-6 first:ml-0">
                 <PlayingCard />
               </li>
             )}

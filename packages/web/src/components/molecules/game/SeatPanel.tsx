@@ -25,7 +25,7 @@ interface SeatPanelProps {
 }
 
 const panel = tv({
-  base: 'flex w-full flex-col gap-3 rounded-2xl border bg-card p-2 backdrop-blur-xl lg:w-44',
+  base: 'flex min-h-52 w-full flex-col gap-2 rounded-2xl border bg-card p-2 backdrop-blur-xl lg:h-52 lg:w-44 lg:overflow-y-auto',
   variants: {
     isTurn: {
       true: 'border-primary ring-2 ring-primary',
@@ -60,6 +60,13 @@ export function SeatPanel({
             <Avatar name={username} />
             <span className="truncate text-sm font-semibold">{username}</span>
             {isYou && <Badge variant="primary">{t('you')}</Badge>}
+            {bet !== undefined && (
+              <span className="ml-auto flex shrink-0 items-center gap-1 text-sm tabular-nums">
+                <Bill />
+                <span className="sr-only">{t('betLabel')}</span>
+                {bet}
+              </span>
+            )}
           </>
         ) : (
           <>
@@ -68,13 +75,6 @@ export function SeatPanel({
           </>
         )}
       </header>
-      {username && bet !== undefined && (
-        <p className="flex items-center gap-1 text-sm tabular-nums">
-          <Bill />
-          <span className="sr-only">{t('betLabel')}</span>
-          {bet}
-        </p>
-      )}
       {hands.map((hand, index) => (
         <div
           key={index}

@@ -17,9 +17,10 @@ export function PlayerHand({ hand, result }: PlayerHandProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <ul className="flex flex-wrap gap-1">
+      {/* Overlapping cards keep the hand in one row, so a drawn card doesn't change the seat's height */}
+      <ul className="flex">
         {hand.cards.map((card, index) => (
-          <li key={index}>
+          <li key={index} className="-ml-6 first:ml-0">
             <PlayingCard card={card} />
           </li>
         ))}
