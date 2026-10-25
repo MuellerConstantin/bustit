@@ -403,6 +403,7 @@
         "bet_out_of_limits": "Der Einsatz liegt außerhalb der Limits des Tisches.",
         "insufficient_balance": "Dein Guthaben reicht dafür nicht.",
         "round_in_progress": "Es läuft gerade eine Runde.",
+        "betting_closed": "Das Ergebnis der letzten Runde wird noch angezeigt.",
         "round_rejected": "Das geht gerade nicht.",
         "timeout": "Der Server hat nicht geantwortet."
       }

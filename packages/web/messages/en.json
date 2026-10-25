@@ -403,6 +403,7 @@
         "bet_out_of_limits": "The bet is outside the table's limits.",
         "insufficient_balance": "Your balance doesn't cover that.",
         "round_in_progress": "A round is being played right now.",
+        "betting_closed": "The result of the last round is still shown.",
         "round_rejected": "That isn't possible right now.",
         "timeout": "The server did not answer."
       }

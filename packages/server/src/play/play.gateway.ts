@@ -31,6 +31,7 @@ import type { RealtimeSocketData } from '../infrastructure/realtime/index.js';
 import { InsufficientBalanceError } from '../ledger/index.js';
 import {
   AlreadySeatedError,
+  BettingClosedError,
   BetOutOfLimitsError,
   InvalidSeatError,
   NotJoinedError,
@@ -334,6 +335,7 @@ const failureCodes: readonly (readonly [
   [BetOutOfLimitsError, 'bet_out_of_limits'],
   [InsufficientBalanceError, 'insufficient_balance'],
   [RoundInProgressError, 'round_in_progress'],
+  [BettingClosedError, 'betting_closed'],
   [RoundRejectedError, 'round_rejected'],
 ];
 

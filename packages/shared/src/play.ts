@@ -64,6 +64,7 @@ export const playErrorCodeSchema = z.enum([
   'bet_out_of_limits',
   'insufficient_balance',
   'round_in_progress',
+  'betting_closed',
   'round_rejected',
 ]);
 
@@ -76,8 +77,9 @@ export type PublicTableState = {
   readonly bets: readonly Bet[];
   readonly round: PublicRoundState | null;
   /**
-   * When the running timer ends, as an ISO timestamp: the betting window
-   * before a round, the turn of the seat to act during one.
+   * When the running timer ends, as an ISO timestamp: the result hold of a
+   * settled round, the betting window before a round, the turn of the seat to
+   * act during one.
    */
   readonly deadline: string | null;
 };

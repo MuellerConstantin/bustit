@@ -32,6 +32,7 @@ import { InsufficientBalanceError, LedgerService } from '../ledger/index.js';
 import { TablesService } from '../tables/index.js';
 import {
   AlreadySeatedError,
+  BettingClosedError,
   BetOutOfLimitsError,
   InvalidSeatError,
   NotSeatedError,
@@ -60,6 +61,11 @@ export type PlayTimings = {
   /** How long a seat has to act before it is sent a stand. */
   readonly turnMs: number;
   /**
+   * How long the result of a settled round stays on the table before the next
+   * betting window opens and clears it.
+   */
+  readonly resultMs: number;
+  /**
    * How long the seat of a user whose connection dropped is kept for them to
    * come back. It is given up when a betting window ends after that.
    */
@@ -69,6 +75,7 @@ export type PlayTimings = {
 export const DEFAULT_PLAY_TIMINGS: PlayTimings = {
   betWindowMs: 30_000,
   turnMs: 20_000,
+  resultMs: 10_000,
   reconnectMs: 15_000,
 };
 
@@ -92,7 +99,7 @@ type ActiveRound = {
 
 /** The one timer a table has running: the betting window or a seat's turn. */
 type ArmedTimer = {
-  readonly kind: 'bet' | 'turn';
+  readonly kind: 'bet' | 'turn' | 'result';
   readonly endsAt: number;
   readonly handle: NodeJS.Timeout;
 };
@@ -324,9 +331,12 @@ export class PlayService implements OnModuleDestroy {
         throw new RoundInProgressError(tableId);
       }
 
+      if (table.round?.state.phase === 'settled') {
+        throw new BettingClosedError(tableId);
+      }
+
       assertWithinLimits(table, stake);
       table.bets.set(seat, stake);
-      clearSettled(table);
       this.armBet(tableId, table);
       this.emit(tableId);
     });
@@ -611,7 +621,7 @@ export class PlayService implements OnModuleDestroy {
     if (round.phase === 'settled') {
       // A window that was running when the round was dealt is over.
       clearTimer(table);
-      this.armBet(tableId, table);
+      this.armResult(tableId, table);
     } else {
       this.armTurn(tableId, table);
     }
@@ -711,9 +721,25 @@ export class PlayService implements OnModuleDestroy {
   }
 
   /**
+   * Keeps the result of a settled round on the table for `resultMs` before the
+   * next betting window opens. Bets are closed meanwhile. An empty table has
+   * nothing to show the result to, so it is cleared right away.
+   */
+  private armResult(tableId: string, table: PlayTable): void {
+    if (table.seats.every((userId) => userId === null)) {
+      clearTimer(table);
+      clearSettled(table);
+      return;
+    }
+
+    this.arm(tableId, table, 'result', this.timings.resultMs);
+  }
+
+  /**
    * Keeps a betting window running while someone sits at the table and no
    * round is being played, and stops the timer when the table is empty. Bets
-   * don't extend a window that is running.
+   * don't extend a window that is running. While a settled round's result is
+   * still shown, the result timer decides when the window opens.
    */
   private armBet(tableId: string, table: PlayTable): void {
     if (table.round?.state.phase === 'playerTurns') {
@@ -723,6 +749,10 @@ export class PlayService implements OnModuleDestroy {
     if (table.seats.every((userId) => userId === null)) {
       clearTimer(table);
       clearSettled(table);
+      return;
+    }
+
+    if (table.round?.state.phase === 'settled') {
       return;
     }
 
@@ -764,6 +794,8 @@ export class PlayService implements OnModuleDestroy {
 
       if (timer.kind === 'turn') {
         await this.standForTurn(tableId, table);
+      } else if (timer.kind === 'result') {
+        this.openBettingWindow(tableId, table);
       } else {
         await this.endBetWindow(tableId, table);
       }
@@ -773,6 +805,13 @@ export class PlayService implements OnModuleDestroy {
         error instanceof Error ? error.stack : String(error),
       );
     });
+  }
+
+  /** Clears the result that was shown and starts the next betting window. */
+  private openBettingWindow(tableId: string, table: PlayTable): void {
+    clearSettled(table);
+    this.armBet(tableId, table);
+    this.emit(tableId);
   }
 
   /** Sends the seat that ran out of time a stand. */

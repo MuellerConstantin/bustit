@@ -62,6 +62,7 @@ describe('RoundRecoveryService', () => {
         {
           betWindowMs: 60_000,
           turnMs: 60_000,
+          resultMs: 60_000,
           reconnectMs: 60_000,
         },
       );

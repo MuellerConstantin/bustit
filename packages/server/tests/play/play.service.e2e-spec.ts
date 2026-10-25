@@ -9,6 +9,7 @@ import {
 } from '../../src/ledger/index.js';
 import {
   AlreadySeatedError,
+  BettingClosedError,
   BetOutOfLimitsError,
   InvalidSeatError,
   NotSeatedError,
@@ -37,6 +38,7 @@ const TABLE_CONFIG: TableConfig = { seats: 5, minBet: 5, maxBet: 10_000 };
 const QUIET: PlayTimings = {
   betWindowMs: 60_000,
   turnMs: 60_000,
+  resultMs: 60_000,
   reconnectMs: 60_000,
 };
 
@@ -393,15 +395,16 @@ describe('PlayService', () => {
       ).rejects.toThrow(RoundInProgressError);
     });
 
-    it('clears a settled round with the first bet for the next one', async () => {
+    it('keeps the result of a settled round and rejects bets while it is shown', async () => {
       const { service, alice } = await roundInPlay();
 
       await playOut(service);
+      await expect(service.placeBet(TABLE, alice.id, 10)).rejects.toThrow(
+        BettingClosedError,
+      );
+
       expect(service.publicState(TABLE).round?.phase).toBe('settled');
-
-      await service.placeBet(TABLE, alice.id, 10);
-
-      expect(service.publicState(TABLE).round).toBeNull();
+      expect(service.publicState(TABLE).bets).toEqual([]);
     });
 
     it('clears a settled round once nobody sits at the table', async () => {
@@ -535,6 +538,7 @@ describe('PlayService', () => {
     const FAST: PlayTimings = {
       betWindowMs: 100,
       turnMs: 300,
+      resultMs: 100,
       reconnectMs: 60_000,
     };
 
@@ -574,7 +578,7 @@ describe('PlayService', () => {
       expect(service.publicState(TABLE).round).toBeNull();
     });
 
-    it('clears a settled round when the betting window after it ends', async () => {
+    it('clears the result once its time is over and opens the next window', async () => {
       const { service } = await roundInPlay(10, FAST);
 
       await eventually(
@@ -662,6 +666,7 @@ describe('PlayService', () => {
       const { service, alice, bob } = await roundInPlay(10, {
         betWindowMs: 60_000,
         turnMs: 400,
+        resultMs: 60_000,
         reconnectMs: 60_000,
       });
       const { seat } = service.publicState(TABLE).round!.turn!;
@@ -682,6 +687,7 @@ describe('PlayService', () => {
       const service = newService('absence', {
         betWindowMs: 100,
         turnMs: 60_000,
+        resultMs: 100,
         reconnectMs: 60_000,
       });
       const alice = await createPlayer(app);
@@ -700,6 +706,7 @@ describe('PlayService', () => {
       const service = newService('absence', {
         betWindowMs: 100,
         turnMs: 60_000,
+        resultMs: 100,
         reconnectMs: 0,
       });
       const alice = await createPlayer(app);
@@ -752,6 +759,7 @@ describe('PlayService', () => {
       const service = newService('absence', {
         betWindowMs: 100,
         turnMs: 60_000,
+        resultMs: 100,
         reconnectMs: 0,
       });
 

@@ -87,6 +87,14 @@ export class RoundInProgressError extends Error {
   }
 }
 
+/** Bets are closed while the result of the last round is still shown. */
+export class BettingClosedError extends Error {
+  constructor(readonly tableId: string) {
+    super(`The result of the last round is still shown at table ${tableId}`);
+    this.name = 'BettingClosedError';
+  }
+}
+
 /** The engine rejected a bet or an action; `code` is the engine's error code. */
 export class RoundRejectedError extends Error {
   constructor(

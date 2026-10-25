@@ -91,7 +91,7 @@ export async function runBot(
   }
 
   async function bet(state: TableStateMessage, seat: number): Promise<void> {
-    const windowOpen = state.round === null || state.round.phase === 'settled';
+    const windowOpen = state.round === null;
 
     if (!windowOpen || !state.deadline || state.deadline === betDeadline) {
       return;

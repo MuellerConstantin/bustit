@@ -1,5 +1,6 @@
 export {
   AlreadySeatedError,
+  BettingClosedError,
   BetOutOfLimitsError,
   InvalidSeatError,
   NotJoinedError,
