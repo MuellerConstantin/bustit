@@ -59,7 +59,7 @@ export async function runBot(
   let actedOn: string | null = null;
 
   async function sitDown(): Promise<void> {
-    if (sitting || !latest) {
+    if (sitting || !latest || !socket.connected) {
       return;
     }
 
@@ -75,6 +75,14 @@ export async function runBot(
 
     if (!ack.ok) {
       log(`could not sit down on seat ${seat}: ${ack.message}`);
+
+      // Only a seat taken by someone else is worth another try; any other
+      // error would repeat the same way, so the bot leaves instead.
+      if (ack.error !== 'seat_taken') {
+        socket.disconnect();
+        return;
+      }
+
       setTimeout(() => void sitDown(), SIT_RETRY_MS);
       return;
     }
@@ -98,6 +106,13 @@ export async function runBot(
 
     if (!ack.ok) {
       log(`bet rejected: ${ack.message}`);
+
+      // The balance doesn't refill, so a bot without Bucks can't play on.
+      if (ack.error === 'insufficient_balance') {
+        log('out of Bucks, leaving the table');
+        socket.disconnect();
+      }
+
       return;
     }
 

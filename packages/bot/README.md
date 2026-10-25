@@ -13,9 +13,11 @@ npm run build -w @bustit/bot
 ```
 
 Starts bots at a table. The accounts have to exist already, see [configuration](docs/configuration.md).
+npm runs the script in the package folder, so the paths to the `.env` files are relative to
+`packages/bot`.
 
 ```bash
-npm run start -w @bustit/bot -- --table <table-id> --env .env.bot1.local --env .env.bot2.local
+npm run start -w @bustit/bot -- --table <table-id> --env ../../.env.bot1.local --env ../../.env.bot2.local
 ```
 
 Runs the house edge simulation, which plays millions of hands by basic strategy. It takes a while,
