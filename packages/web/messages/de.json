@@ -341,7 +341,7 @@
     },
     "playerHand": {
       "total": "{total}",
-      "totalSoft": "{total} (weich)",
+      "totalSoft": "{total} (Soft)",
       "stakeLabel": "Einsatz",
       "status": {
         "bust": "Über 21",
@@ -369,10 +369,10 @@
       "spectator": "Du schaust zu. Setz dich auf einen freien Platz, um mitzuspielen.",
       "actionsLabel": "Aktionen",
       "actions": {
-        "hit": "Karte",
-        "stand": "Halten",
-        "double": "Verdoppeln",
-        "split": "Teilen"
+        "hit": "Hit",
+        "stand": "Stand",
+        "double": "Double",
+        "split": "Split"
       },
       "chipsLabel": "Chips",
       "addToStake": "Einsatz um {value, number} erhöhen",
