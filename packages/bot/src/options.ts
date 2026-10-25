@@ -5,19 +5,19 @@ import { z } from 'zod';
 export type BotOptions = {
   readonly server: string;
   readonly table: string;
-  /** One `.env` file per bot, each holding that bot's account. */
-  readonly env: readonly string[];
+  /** The `.env` file of the one bot this process plays. */
+  readonly env: string;
 };
 
 const optionsSchema = z.object({
   server: z.url(),
   table: z.uuid(),
-  env: z.array(z.string().min(1)).min(1),
+  env: z.string().min(1),
 });
 
 /**
  * Reads the command line arguments. Without `--env` there is no account to
- * play with, so at least one is required.
+ * play with, so it is required.
  *
  * @throws ZodError if an argument is missing or malformed.
  */
@@ -27,7 +27,7 @@ export function parseOptions(args: readonly string[]): BotOptions {
     options: {
       server: { type: 'string', default: 'http://localhost:8080' },
       table: { type: 'string' },
-      env: { type: 'string', multiple: true },
+      env: { type: 'string' },
     },
     strict: true,
   });
